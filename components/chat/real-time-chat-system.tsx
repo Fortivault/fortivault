@@ -36,7 +36,7 @@ export function RealTimeChatSystem({
   const [isLoading, setIsLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatService = useRef(new RealTimeChatService())
-  const typingTimeoutRef = useRef<NodeJS.Timeout>()
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const initializeChat = async () => {
