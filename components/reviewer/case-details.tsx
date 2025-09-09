@@ -18,8 +18,10 @@ interface CaseDetailsProps {
 }
 
 export function CaseDetails({ caseData }: CaseDetailsProps) {
-  const [status, setStatus] = useState(caseData.status)
-  const [priority, setPriority] = useState(caseData.priority)
+  type CaseStatus = "intake" | "under-review" | "action-recommended" | "closed"
+  type CasePriority = "low" | "medium" | "high"
+  const [status, setStatus] = useState<CaseStatus>(caseData.status as CaseStatus)
+  const [priority, setPriority] = useState<CasePriority>(caseData.priority as CasePriority)
   const [notes, setNotes] = useState("")
 
   const handleSaveChanges = () => {
@@ -144,7 +146,7 @@ export function CaseDetails({ caseData }: CaseDetailsProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Status</label>
-                      <Select value={status} onValueChange={setStatus}>
+                      <Select value={status} onValueChange={(v) => setStatus(v as CaseStatus)}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -158,7 +160,7 @@ export function CaseDetails({ caseData }: CaseDetailsProps) {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Priority</label>
-                      <Select value={priority} onValueChange={setPriority}>
+                      <Select value={priority} onValueChange={(v) => setPriority(v as CasePriority)}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
