@@ -302,7 +302,7 @@ export function AgentAnalyticsDashboard({ agentId, agentName }: AgentAnalyticsDa
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ type, percent }) => `${type} ${(percent * 100).toFixed(0)}%`}
+                      label={({ type, percent }: { type: string; percent?: number }) => `${type} ${(((percent ?? 0) * 100)).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
