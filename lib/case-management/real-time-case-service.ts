@@ -7,7 +7,7 @@ export interface Case {
   id: string
   case_id: string
   victim_email: string
-  victim_phone?: string
+  victim_phone?: string | null
   scam_type: string
   amount?: number
   currency?: string
