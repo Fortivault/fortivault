@@ -5,6 +5,7 @@ declare namespace NodeJS {
     NEXT_PUBLIC_SUPABASE_URL: string
     NEXT_PUBLIC_SUPABASE_ANON_KEY: string
     NEXT_PUBLIC_APP_URL?: string
+    NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL?: string
     SMTP_HOST?: string
     SMTP_PORT?: string
     SMTP_USER?: string
