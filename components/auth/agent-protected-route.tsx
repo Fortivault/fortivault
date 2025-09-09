@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 interface AgentProtectedRouteProps {
@@ -10,24 +10,33 @@ interface AgentProtectedRouteProps {
 
 export function AgentProtectedRoute({ children }: AgentProtectedRouteProps) {
   const router = useRouter()
+  const [checked, setChecked] = useState(false)
+  const [isAuthed, setIsAuthed] = useState(false)
 
   useEffect(() => {
-    const agentAuth = localStorage.getItem("agentAuth")
-    if (agentAuth !== "true") {
+    try {
+      const auth = typeof window !== "undefined" ? localStorage.getItem("agentAuth") : null
+      const ok = auth === "true"
+      setIsAuthed(ok)
+      setChecked(true)
+      if (!ok) {
+        router.push("/agent/login")
+      }
+    } catch {
+      setChecked(true)
       router.push("/agent/login")
-      return
     }
   }, [router])
 
-  // Check authentication
-  const agentAuth = localStorage.getItem("agentAuth")
-  if (agentAuth !== "true") {
+  if (!checked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     )
   }
+
+  if (!isAuthed) return null
 
   return <>{children}</>
 }

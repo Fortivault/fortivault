@@ -7,19 +7,19 @@ export interface Case {
   id: string
   case_id: string
   victim_email: string
-  victim_phone?: string
+  victim_phone?: string | null
   scam_type: string
-  amount?: number
-  currency?: string
-  timeline?: string
-  description?: string
+  amount?: number | null
+  currency?: string | null
+  timeline?: string | null
+  description?: string | null
   status: string
   priority: string
-  assigned_agent_id?: string
-  estimated_recovery_amount?: number
-  recovery_probability?: number
-  last_agent_contact?: string
-  victim_satisfaction_rating?: number
+  assigned_agent_id?: string | null
+  estimated_recovery_amount?: number | null
+  recovery_probability?: number | null
+  last_agent_contact?: string | null
+  victim_satisfaction_rating?: number | null
   created_at: string
   updated_at: string
 }

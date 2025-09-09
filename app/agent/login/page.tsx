@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, UserCheck } from "lucide-react"
 import { useAgentAuth } from "@/hooks/use-agent-auth"
 
+export const dynamic = "force-dynamic"
+
 export default function AgentLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
