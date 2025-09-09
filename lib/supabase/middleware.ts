@@ -42,10 +42,36 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Allow access to public routes and auth routes
-  const publicRoutes = ["/", "/about", "/contact", "/faq", "/services", "/admin/login", "/agent/login"]
-  const isPublicRoute = publicRoutes.some(
-    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith("/auth"),
-  )
+  const publicRoutes = [
+    "/",
+    "/about",
+    "/contact",
+    "/faq",
+    "/services",
+    "/how-it-works",
+    "/report",
+    "/privacy",
+    "/terms",
+    "/success-stories",
+    "/team",
+    "/blog",
+    "/partnerships",
+    "/compliance",
+    "/disclaimers",
+    "/fraud-types",
+    "/prevention-guide",
+    "/support",
+    "/emergency",
+    "/locations",
+    "/cookies",
+    "/login",
+    "/signup",
+    "/admin/login",
+    "/agent/login",
+  ]
+  const isPublicRoute =
+    publicRoutes.some((route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith("/auth")) ||
+    request.nextUrl.pathname === "/auth/check-email"
 
   const isAgentRoute = request.nextUrl.pathname.startsWith("/agent")
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin")
