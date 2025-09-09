@@ -12,7 +12,9 @@ interface AdminCase {
   status: string
   priority: string
   submissionDate: string
+  lastUpdate: string
   contactEmail: string
+  description: string
 }
 
 interface AdminCaseListProps {
