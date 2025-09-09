@@ -235,7 +235,7 @@ export default function AdminPage() {
               <AdminCaseList
                 cases={cases}
                 selectedCase={selectedCase}
-                onSelectCase={setSelectedCase}
+                onSelectCase={(caseItem) => setSelectedCase(caseItem)}
                 onUpdateStatus={updateCaseStatus}
               />
             </div>
@@ -373,7 +373,7 @@ export default function AdminPage() {
                     </TabsContent>
 
                     <TabsContent value="chat" className="mt-6">
-                      <AgentChatSystem caseId={selectedCase.id} />
+                      <AgentChatSystem caseId={selectedCase.id} victimName={selectedCase.contactEmail} />
                     </TabsContent>
                   </Tabs>
                 </CardContent>
