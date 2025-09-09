@@ -102,6 +102,7 @@ export function Navigation() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <div className="sr-only">Mobile navigation menu</div>
               <div className="flex flex-col space-y-4 mt-4">
                 {navItems.map((item) => (
                   <Link
