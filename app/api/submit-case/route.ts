@@ -1,27 +1,31 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import type { Inserts } from "@/types/database.types"
+import type { Case } from "@/types/entities"
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const supabase = await createClient()
 
-    const caseData = {
+    const caseData: Inserts<"cases"> = {
       case_id: formData.get("caseId") as string,
       victim_email: formData.get("contactEmail") as string,
-      victim_phone: (formData.get("contactPhone") as string) || null,
+      victim_phone: ((formData.get("contactPhone") as string) || null) as string | null,
       scam_type: formData.get("scamType") as string,
-      amount: Number.parseFloat(formData.get("amount") as string),
-      currency: formData.get("currency") as string,
-      timeline: formData.get("timeline") as string,
-      description: formData.get("description") as string,
-      transaction_hashes: JSON.parse((formData.get("transactionHashes") as string) || "[]"),
-      bank_references: JSON.parse((formData.get("bankReferences") as string) || "[]"),
-      evidence_file_count: Number.parseInt((formData.get("evidenceFileCount") as string) || "0"),
+      amount: formData.get("amount") ? Number.parseFloat(formData.get("amount") as string) : null,
+      currency: (formData.get("currency") as string) || null,
+      timeline: (formData.get("timeline") as string) || null,
+      description: (formData.get("description") as string) || null,
       status: "Intake",
+      priority: "normal",
     }
 
-    const { data: caseRecord, error: caseError } = await supabase.from("cases").insert(caseData).select().single()
+    const { data: caseRecord, error: caseError } = await supabase
+      .from("cases")
+      .insert(caseData)
+      .select()
+      .single()
 
     if (caseError) {
       console.error("[v0] Error saving case to Supabase:", caseError)
@@ -29,9 +33,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: chatRoomError } = await supabase.from("chat_rooms").insert({
-      case_id: caseRecord.id,
+      case_id: (caseRecord as Case).id,
       victim_email: caseData.victim_email,
-      assigned_agent_id: "550e8400-e29b-41d4-a716-446655440001", // Default agent
+      assigned_agent_id: "550e8400-e29b-41d4-a716-446655440001",
     })
 
     if (chatRoomError) {
@@ -47,7 +51,6 @@ export async function POST(request: NextRequest) {
       })
     } catch (formspreeError) {
       console.error("[v0] Formspree submission failed:", formspreeError)
-      // Don't fail the entire request if Formspree fails
     }
 
     return NextResponse.json({
