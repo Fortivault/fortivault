@@ -45,25 +45,72 @@ chatService.subscribeToMessages(roomId, handleNewMessage)
 ### Component Organization
 
 1. **Feature Modules** (`components/`):
-   - `admin/` - Administrative dashboards and tools
-   - `chat/` - Real-time communication components
-   - `auth/` - Authentication and authorization
-   - `wizard-steps/` - Multi-step forms
+   - **Multi-step Wizards**:
+     ```tsx
+     // Wizard pattern with state management
+     export function FraudReportingWizard() {
+       const [data, setData] = useState<WizardData>(initialData)
+       return (
+         <Card>
+           <Progress value={currentStep / totalSteps * 100} />
+           {/* Step components */}
+         </Card>
+       )
+     }
+     ```
+   
+   - **Admin Components**:
+     ```tsx
+     // Status and priority badges pattern
+     <Badge className={getStatusColor(status)}>{status}</Badge>
+     <Badge className={getPriorityColor(priority)}>{priority}</Badge>
+     ```
+
+   - **Form Steps**:
+     ```tsx
+     // Step component pattern with controlled inputs
+     interface StepProps {
+       data: WizardData
+       updateData: (updates: Partial<WizardData>) => void
+     }
+     ```
 
 2. **UI Components** (`components/ui/`):
-   ```tsx
-   // Example card component pattern
-   <Card>
-     <CardHeader>
-       <CardTitle>Title</CardTitle>
-     </CardHeader>
-     <CardContent>Content</CardContent>
-   </Card>
-   ```
+   - Use composition with Radix primitives
+   - Consistent styling with Tailwind CSS
+   - Example patterns:
+     ```tsx
+     // Card pattern
+     <Card>
+       <CardHeader>
+         <CardTitle>Title</CardTitle>
+       </CardHeader>
+       <CardContent>Content</CardContent>
+     </Card>
 
-3. **Page-specific Components**:
+     // Form controls pattern
+     <div className="space-y-2">
+       <Label htmlFor="fieldId">Label</Label>
+       <Input 
+         id="fieldId"
+         value={value}
+         onChange={handleChange}
+       />
+     </div>
+     ```
+
+3. **Page Components**:
    - Co-located with routes in `app/` directory
-   - Share common layouts and loading states
+   - Follow Next.js 14+ conventions:
+     ```
+     app/
+       └── dashboard/
+           ├── page.tsx        # Main page component
+           ├── loading.tsx     # Loading state
+           └── components/     # Page-specific components
+     ```
+   - Use React Server Components by default
+   - Add "use client" for interactive features
 
 ### Key Directories
 - `app/` - Next.js routes and pages
