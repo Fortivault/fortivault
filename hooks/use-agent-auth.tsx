@@ -3,15 +3,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 
-interface Agent {
-  id: string
-  email: string
-  name: string
-  specialization: string
-}
+import type { AgentPublic } from "@/types/entities"
 
 interface AgentAuthContextType {
-  agent: Agent | null
+  agent: AgentPublic | null
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
