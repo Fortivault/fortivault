@@ -2,27 +2,10 @@
 
 import { createClient } from "@/lib/supabase/client"
 import type { RealtimeChannel } from "@supabase/supabase-js"
+import type { Message as DBMessage, ChatRoom as DBChatRoom } from "@/types/entities"
 
-export interface ChatMessage {
-  id: string
-  chat_room_id: string
-  sender_type: "victim" | "agent"
-  sender_id: string
-  sender_name: string
-  content: string
-  message_type: "text" | "file" | "system"
-  is_read: boolean
-  created_at: string
-}
-
-export interface ChatRoom {
-  id: string
-  case_id: string
-  victim_email: string
-  assigned_agent_id: string | null
-  is_active: boolean
-  created_at: string
-}
+export type ChatMessage = DBMessage
+export type ChatRoom = DBChatRoom
 
 export class RealTimeChatService {
   private supabase = createClient()
