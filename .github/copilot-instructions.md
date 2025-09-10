@@ -8,9 +8,62 @@ This is a Next.js application with the following key architectural components:
 
 - **Frontend UI**: Built with Next.js 14+ using the App Router pattern
 - **Authentication**: Custom auth system with agent and user roles (`components/auth/`)
-- **Database**: Supabase integration (`lib/supabase/`)
+- **Database**: Supabase integration with schema migrations (`lib/supabase/`, `scripts/*.sql`)
 - **Real-time Features**: Chat and case management systems (`components/chat/`)
 - **Component Library**: Uses Radix UI primitives with custom styling
+
+### Database Schema
+The database is organized around these core entities:
+- **Cases**: Tracks fraud cases with unique IDs (CSRU-XXXXXXXXX format)
+- **Agents**: Manages recovery specialists and their online status
+- **Chat Rooms**: Links cases with victims and agents
+- **Messages**: Stores real-time communication history
+- **User Profiles**: Maintains user data and preferences
+
+Database conventions:
+- All tables use UUID primary keys
+- Timestamps include created_at/updated_at fields
+- JSONB fields for flexible data (e.g., transaction_hashes)
+- Proper foreign key relationships with ON DELETE CASCADE
+
+### Real-time Communication
+The system uses Supabase real-time features for:
+
+1. **Chat System**:
+```tsx
+// Example from components/chat/real-time-chat-system.tsx
+const chatService = new RealTimeChatService()
+await chatService.createOrGetChatRoom(caseId, userId)
+chatService.subscribeToMessages(roomId, handleNewMessage)
+```
+
+2. **Case Updates**:
+- Real-time status changes via Supabase subscriptions
+- Typing indicators in chat
+- Agent online presence tracking
+
+### Component Organization
+
+1. **Feature Modules** (`components/`):
+   - `admin/` - Administrative dashboards and tools
+   - `chat/` - Real-time communication components
+   - `auth/` - Authentication and authorization
+   - `wizard-steps/` - Multi-step forms
+
+2. **UI Components** (`components/ui/`):
+   ```tsx
+   // Example card component pattern
+   <Card>
+     <CardHeader>
+       <CardTitle>Title</CardTitle>
+     </CardHeader>
+     <CardContent>Content</CardContent>
+   </Card>
+   ```
+
+3. **Page-specific Components**:
+   - Co-located with routes in `app/` directory
+   - Share common layouts and loading states
 
 ### Key Directories
 - `app/` - Next.js routes and pages
