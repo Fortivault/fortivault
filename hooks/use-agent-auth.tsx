@@ -16,7 +16,7 @@ interface AgentAuthContextType {
 const AgentAuthContext = createContext<AgentAuthContextType | undefined>(undefined)
 
 export function AgentAuthProvider({ children }: { children: ReactNode }) {
-  const [agent, setAgent] = useState<Agent | null>(null)
+  const [agent, setAgent] = useState<AgentPublic | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
