@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { rateLimiter } from "@/lib/security/rate-limiter"
 import type { Agent, AgentPublic } from "@/types/entities"
 import { z } from "zod"
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many login attempts. Please wait and try again." }, { status: 429 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { data: agent, error } = await supabase
       .from("agents")
