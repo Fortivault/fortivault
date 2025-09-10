@@ -61,7 +61,10 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
     return false
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch("/api/agent/logout", { method: "POST" })
+    } catch {}
     setAgent(null)
     localStorage.removeItem("agentAuth")
     localStorage.removeItem("agentData")
