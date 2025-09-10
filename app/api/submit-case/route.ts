@@ -19,7 +19,16 @@ const SubmitCaseSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const body = Object.fromEntries(formData.entries())
+    const body = {
+      caseId: formData.get("caseId"),
+      contactEmail: formData.get("contactEmail"),
+      contactPhone: formData.get("contactPhone"),
+      scamType: formData.get("scamType"),
+      amount: formData.get("amount"),
+      currency: formData.get("currency"),
+      timeline: formData.get("timeline"),
+      description: formData.get("description"),
+    }
     const parsed = SubmitCaseSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: "Invalid input" }, { status: 400 })
@@ -66,9 +75,23 @@ export async function POST(request: NextRequest) {
     const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT || "https://formspree.io/f/xeolvgjp"
 
     try {
+      const forwardData = new FormData()
+      forwardData.append("caseId", parsed.data.caseId)
+      forwardData.append("contactEmail", parsed.data.contactEmail)
+      if (parsed.data.contactPhone) forwardData.append("contactPhone", parsed.data.contactPhone)
+      forwardData.append("scamType", parsed.data.scamType)
+      if (parsed.data.amount ?? "") forwardData.append("amount", String(parsed.data.amount))
+      if (parsed.data.currency ?? "") forwardData.append("currency", String(parsed.data.currency))
+      if (parsed.data.timeline ?? "") forwardData.append("timeline", String(parsed.data.timeline))
+      if (parsed.data.description ?? "") forwardData.append("description", String(parsed.data.description))
+      const tx = formData.get("transactionHashes") as string | null
+      const refs = formData.get("bankReferences") as string | null
+      if (tx) forwardData.append("transactionHashes", tx)
+      if (refs) forwardData.append("bankReferences", refs)
+
       await fetch(formspreeEndpoint, {
         method: "POST",
-        body: formData,
+        body: forwardData,
       })
     } catch (formspreeError) {
       console.error("[v0] Formspree submission failed:", formspreeError)

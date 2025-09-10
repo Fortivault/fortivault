@@ -41,7 +41,7 @@ export function LoginForm() {
           <Shield className="w-6 h-6 text-primary" />
         </div>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} action="/api/noop" method="post">
         <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive">
