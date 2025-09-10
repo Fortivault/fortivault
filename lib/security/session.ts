@@ -46,7 +46,8 @@ export async function verifySession(token: string): Promise<Record<string, any> 
     const valid = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(data))
     if (!valid) return null
 
-    const json = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(encodedPayload.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))))
+    const payloadBytes = Uint8Array.from(atob(encodedPayload.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0))
+    const json = JSON.parse(new TextDecoder().decode(payloadBytes))
     if (typeof json.exp === "number" && json.exp < Math.floor(Date.now() / 1000)) return null
     return json
   } catch {
