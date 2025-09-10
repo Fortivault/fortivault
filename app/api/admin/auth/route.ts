@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { rateLimiter } from "@/lib/security/rate-limiter"
+import type { AdminUser, AdminUserPublic } from "@/types/entities"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {
@@ -41,18 +42,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, admin.password_hash)
+    const isValidPassword = await bcrypt.compare(password, (admin as AdminUser).password_hash)
 
     if (!isValidPassword) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     // Return admin data without password
-    const { password_hash, ...adminData } = admin
+    const { password_hash, ...adminData } = admin as AdminUser
 
     return NextResponse.json({
       success: true,
-      admin: adminData,
+      admin: adminData as AdminUserPublic,
     })
   } catch (error) {
     console.error("[v0] Admin auth error:", error)
