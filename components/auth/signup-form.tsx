@@ -64,7 +64,7 @@ export function SignupForm() {
         <h2 className="text-xl font-semibold">Create Your Account</h2>
         <p className="text-sm text-muted-foreground">Join our fraud recovery platform to get expert assistance</p>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} action="/api/noop" method="post">
         <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive">
