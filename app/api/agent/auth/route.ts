@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { rateLimiter } from "@/lib/security/rate-limiter"
+import type { Agent, AgentPublic } from "@/types/entities"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {
@@ -41,18 +42,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password (assuming passwords are hashed in database)
-    const isValidPassword = await bcrypt.compare(password, agent.password_hash)
+    const isValidPassword = await bcrypt.compare(password, (agent as Agent).password_hash)
 
     if (!isValidPassword) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     // Return agent data without password
-    const { password_hash, ...agentData } = agent
+    const { password_hash, ...agentData } = agent as Agent
 
     return NextResponse.json({
       success: true,
-      agent: agentData,
+      agent: agentData as AgentPublic,
     })
   } catch (error) {
     console.error("[v0] Agent auth error:", error)
