@@ -2,21 +2,40 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import type { Inserts } from "@/types/database.types"
 import type { Case } from "@/types/entities"
+import { z } from "zod"
+import { getDefaultAgentId } from "@/lib/agents/default-agent"
+
+const SubmitCaseSchema = z.object({
+  caseId: z.string().min(3),
+  contactEmail: z.string().email(),
+  contactPhone: z.string().optional().nullable(),
+  scamType: z.string().min(2),
+  amount: z.string().optional().nullable(),
+  currency: z.string().optional().nullable(),
+  timeline: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+})
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
+    const body = Object.fromEntries(formData.entries())
+    const parsed = SubmitCaseSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: "Invalid input" }, { status: 400 })
+    }
+
     const supabase = await createClient()
 
     const caseData: Inserts<"cases"> = {
-      case_id: formData.get("caseId") as string,
-      victim_email: formData.get("contactEmail") as string,
-      victim_phone: ((formData.get("contactPhone") as string) || null) as string | null,
-      scam_type: formData.get("scamType") as string,
-      amount: formData.get("amount") ? Number.parseFloat(formData.get("amount") as string) : null,
-      currency: (formData.get("currency") as string) || null,
-      timeline: (formData.get("timeline") as string) || null,
-      description: (formData.get("description") as string) || null,
+      case_id: parsed.data.caseId,
+      victim_email: parsed.data.contactEmail,
+      victim_phone: (parsed.data.contactPhone as string | null) ?? null,
+      scam_type: parsed.data.scamType,
+      amount: parsed.data.amount ? Number.parseFloat(parsed.data.amount as string) : null,
+      currency: (parsed.data.currency as string) || null,
+      timeline: (parsed.data.timeline as string) || null,
+      description: (parsed.data.description as string) || null,
       status: "Intake",
       priority: "normal",
     }
@@ -32,10 +51,12 @@ export async function POST(request: NextRequest) {
       throw caseError
     }
 
+    const defaultAgentId = process.env.DEFAULT_AGENT_ID || (await getDefaultAgentId())
+
     const { error: chatRoomError } = await supabase.from("chat_rooms").insert({
       case_id: (caseRecord as Case).id,
       victim_email: caseData.victim_email,
-      assigned_agent_id: "550e8400-e29b-41d4-a716-446655440001",
+      assigned_agent_id: defaultAgentId ?? null,
     })
 
     if (chatRoomError) {

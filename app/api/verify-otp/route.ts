@@ -1,25 +1,24 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { emailService } from "@/lib/email-service"
+import { z } from "zod"
+
+const VerifyOtpSchema = z.object({ email: z.string().email(), otp: z.string().length(6), caseId: z.string().min(3) })
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, otp, caseId } = await request.json()
-
-    if (!email || !otp || !caseId) {
-      return NextResponse.json({ error: "Email, OTP, and case ID are required" }, { status: 400 })
+    const body = await request.json()
+    const parsed = VerifyOtpSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
 
-    // Verify OTP (implement your verification logic here)
-    // For demo purposes, we'll accept any 6-digit code
-    if (otp.length !== 6) {
-      return NextResponse.json({ error: "Invalid OTP format" }, { status: 400 })
-    }
+    const { email, otp, caseId } = parsed.data
 
-    // Generate unique dashboard access link
+    // TODO: Replace with real OTP verification against a store
+
     const dashboardToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?token=${dashboardToken}&case=${caseId}`
 
-    // Send welcome email with dashboard link
     const result = await emailService.sendWelcomeEmail(email, caseId, dashboardLink)
 
     if (result.success) {

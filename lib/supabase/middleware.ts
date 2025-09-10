@@ -76,8 +76,28 @@ export async function updateSession(request: NextRequest) {
   const isAgentRoute = request.nextUrl.pathname.startsWith("/agent")
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin")
 
-  if (isAgentRoute || isAdminRoute) {
-    return supabaseResponse
+  if (isAgentRoute) {
+    const token = request.cookies.get("agent_session")?.value
+    const { verifySession } = await import("@/lib/security/session")
+    const payload = token ? await verifySession(token) : null
+    const isLogin = request.nextUrl.pathname === "/agent/login"
+    if (!payload && !isLogin) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/agent/login"
+      return NextResponse.redirect(url)
+    }
+  }
+
+  if (isAdminRoute) {
+    const token = request.cookies.get("admin_session")?.value
+    const { verifySession } = await import("@/lib/security/session")
+    const payload = token ? await verifySession(token) : null
+    const isLogin = request.nextUrl.pathname === "/admin/login"
+    if (!payload && !isLogin) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/admin/login"
+      return NextResponse.redirect(url)
+    }
   }
 
   if (!user && !isPublicRoute) {

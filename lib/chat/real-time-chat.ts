@@ -94,7 +94,7 @@ export class RealTimeChatService {
       .insert({
         case_id: caseId,
         victim_email: victimEmail,
-        assigned_agent_id: "550e8400-e29b-41d4-a716-446655440001", // Default to Sarah Martinez
+        assigned_agent_id: null,
       })
       .select()
       .single()
