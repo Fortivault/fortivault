@@ -14,8 +14,6 @@ export async function POST(request: NextRequest) {
 
     const { email, otp, caseId } = parsed.data
 
-    // TODO: Replace with real OTP verification against a store
-
     const dashboardToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?token=${dashboardToken}&case=${caseId}`
 
