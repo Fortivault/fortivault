@@ -3,15 +3,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 
-interface Agent {
-  id: string
-  email: string
-  name: string
-  specialization: string
-}
+import type { AgentPublic } from "@/types/entities"
 
 interface AgentAuthContextType {
-  agent: Agent | null
+  agent: AgentPublic | null
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
@@ -21,7 +16,7 @@ interface AgentAuthContextType {
 const AgentAuthContext = createContext<AgentAuthContextType | undefined>(undefined)
 
 export function AgentAuthProvider({ children }: { children: ReactNode }) {
-  const [agent, setAgent] = useState<Agent | null>(null)
+  const [agent, setAgent] = useState<AgentPublic | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
@@ -66,7 +61,10 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
     return false
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch("/api/agent/logout", { method: "POST" })
+    } catch {}
     setAgent(null)
     localStorage.removeItem("agentAuth")
     localStorage.removeItem("agentData")

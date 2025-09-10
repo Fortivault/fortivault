@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 
-interface Profile {
-  id: string
-  email: string
-  first_name: string | null
-  last_name: string | null
-  role: "user" | "reviewer"
-}
+import type { Profile } from "@/types/entities"
 
 interface AuthContextType {
   user: User | null
