@@ -53,14 +53,14 @@ export function TransactionStep({ data, updateData }: TransactionStepProps) {
         <div>
           <h3 className="text-lg font-semibold mb-4">Cryptocurrency Transaction Information</h3>
           <p className="text-muted-foreground mb-4">
-            Please provide any transaction hashes (TXIDs) related to the fraudulent transfers.
+            Please provide any transaction hashes (TXIDs) related to the fraudulent transfers if available. This is optional.
           </p>
         </div>
 
         <div className="space-y-4">
           <div className="flex gap-2">
             <Input
-              placeholder="Enter transaction hash (TXID)"
+              placeholder="Enter transaction hash (TXID) (optional)"
               value={newHash}
               onChange={(e) => setNewHash(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && addTransactionHash()}
