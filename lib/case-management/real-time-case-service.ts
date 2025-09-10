@@ -2,61 +2,17 @@
 
 import { createClient } from "@/lib/supabase/client"
 import type { RealtimeChannel } from "@supabase/supabase-js"
+import type {
+  Case as CaseEntity,
+  CaseNote as CaseNoteEntity,
+  CaseAssignment as CaseAssignmentEntity,
+  AgentActivityLog,
+} from "@/types/entities"
 
-export interface Case {
-  id: string
-  case_id: string
-  victim_email: string
-  victim_phone?: string | null
-  scam_type: string
-  amount?: number | null
-  currency?: string | null
-  timeline?: string | null
-  description?: string | null
-  status: string
-  priority: string
-  assigned_agent_id?: string | null
-  estimated_recovery_amount?: number | null
-  recovery_probability?: number | null
-  last_agent_contact?: string | null
-  victim_satisfaction_rating?: number | null
-  created_at: string
-  updated_at: string
-}
-
-export interface CaseNote {
-  id: string
-  case_id: string
-  agent_id: string
-  note_type: string
-  title?: string
-  content: string
-  is_confidential: boolean
-  priority: string
-  created_at: string
-  updated_at: string
-}
-
-export interface AgentActivity {
-  id: string
-  agent_id: string
-  activity_type: string
-  case_id?: string
-  description?: string
-  metadata: any
-  created_at: string
-}
-
-export interface CaseAssignment {
-  id: string
-  case_id: string
-  agent_id: string
-  assigned_by?: string
-  assignment_type: string
-  assigned_at: string
-  unassigned_at?: string
-  is_active: boolean
-}
+export type Case = CaseEntity
+export type CaseNote = CaseNoteEntity
+export type CaseAssignment = CaseAssignmentEntity
+export type AgentActivity = AgentActivityLog
 
 export class RealTimeCaseService {
   private supabase = createClient()
