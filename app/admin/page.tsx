@@ -5,8 +5,6 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -14,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { AdminCaseList } from "@/components/admin/admin-case-list"
 import { AdminStats } from "@/components/admin/admin-stats"
 import { AgentChatSystem } from "@/components/chat/agent-chat-system"
-import { Shield, Users, FileText, MessageCircle, Lock } from "lucide-react"
+import { Shield, Users, FileText } from "lucide-react"
 
 interface AdminCase {
   id: string
@@ -27,182 +25,82 @@ interface AdminCase {
   lastUpdate: string
   contactEmail: string
   description: string
+  recordId: string
+  assignedAgentId: string | null
 }
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loginError, setLoginError] = useState("")
   const [cases, setCases] = useState<AdminCase[]>([])
   const [selectedCase, setSelectedCase] = useState<AdminCase | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Check authentication on mount
   useEffect(() => {
-    const adminAuth = localStorage.getItem("adminAuthenticated")
-    if (adminAuth === "true") {
-      setIsAuthenticated(true)
-      loadCases()
-    }
+    loadCases()
   }, [])
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoginError("")
-
-    if (email === "super@admin.com" && password === "Admin001") {
-      setIsAuthenticated(true)
-      localStorage.setItem("adminAuthenticated", "true")
-      loadCases()
-    } else {
-      setLoginError("Invalid credentials. Please check your email and password.")
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" })
+    } finally {
+      window.location.href = "/admin/login"
     }
   }
 
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    localStorage.removeItem("adminAuthenticated")
-    setEmail("")
-    setPassword("")
-  }
-
-  const loadCases = () => {
+  const loadCases = async () => {
     setIsLoading(true)
-    const loadedCases: AdminCase[] = []
-
-    // Load cases from localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key?.startsWith("case_")) {
-        const caseData = localStorage.getItem(key)
-        if (caseData) {
-          const parsedCase = JSON.parse(caseData)
-          loadedCases.push({
-            id: parsedCase.caseId,
-            type:
-              parsedCase.scamType === "crypto"
-                ? "Cryptocurrency Fraud"
-                : parsedCase.scamType === "fiat"
-                  ? "Wire Transfer Fraud"
-                  : "Other Fraud",
-            amount: parsedCase.amount,
-            currency: parsedCase.currency,
-            status: parsedCase.status || "intake",
-            priority: "high",
-            submissionDate: parsedCase.submissionDate,
-            lastUpdate: parsedCase.submissionDate,
-            contactEmail: parsedCase.contactEmail,
-            description: parsedCase.description,
-          })
-        }
-      }
-    }
-
-    setCases(loadedCases)
-    if (loadedCases.length > 0) {
-      setSelectedCase(loadedCases[0])
-    }
-    setIsLoading(false)
-  }
-
-  const updateCaseStatus = (caseId: string, newStatus: string) => {
-    const caseKey = `case_${caseId}`
-    const caseData = localStorage.getItem(caseKey)
-    if (caseData) {
-      const parsedCase = JSON.parse(caseData)
-      parsedCase.status = newStatus
-      parsedCase.lastUpdate = new Date().toISOString()
-      localStorage.setItem(caseKey, JSON.stringify(parsedCase))
-
-      // Trigger storage event for real-time updates
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: caseKey,
-          newValue: JSON.stringify(parsedCase),
-        }),
-      )
-
-      loadCases()
+    try {
+      const res = await fetch("/api/admin/cases", { cache: "no-store" })
+      if (!res.ok) throw new Error("Failed to fetch cases")
+      const json = await res.json()
+      const loadedCases: AdminCase[] = (json.cases || []).map((c: any) => ({
+        id: c.case_id,
+        type:
+          c.scam_type === "crypto"
+            ? "Cryptocurrency Fraud"
+            : c.scam_type === "fiat"
+              ? "Wire Transfer Fraud"
+              : c.scam_type,
+        amount: (c.amount ?? "").toString(),
+        currency: c.currency || "",
+        status: c.status,
+        priority: c.priority,
+        submissionDate: c.created_at,
+        lastUpdate: c.updated_at,
+        contactEmail: c.victim_email,
+        description: c.description || "",
+        recordId: c.id,
+        assignedAgentId: c.assigned_agent_id,
+      }))
+      setCases(loadedCases)
+      setSelectedCase(loadedCases[0] || null)
+    } catch (e) {
+      setCases([])
+      setSelectedCase(null)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const addCaseNote = (caseId: string, note: string) => {
-    const caseKey = `case_${caseId}`
-    const caseData = localStorage.getItem(caseKey)
-    if (caseData) {
-      const parsedCase = JSON.parse(caseData)
-      if (!parsedCase.notes) parsedCase.notes = []
-      parsedCase.notes.push({
-        id: Date.now().toString(),
-        content: note,
-        timestamp: new Date().toISOString(),
-        author: "Admin",
-      })
-      parsedCase.lastUpdate = new Date().toISOString()
-      localStorage.setItem(caseKey, JSON.stringify(parsedCase))
-
-      // Trigger storage event for real-time updates
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: caseKey,
-          newValue: JSON.stringify(parsedCase),
-        }),
-      )
-
-      loadCases()
-    }
+  const updateCaseStatus = async (caseId: string, newStatus: string) => {
+    const target = cases.find((c) => c.id === caseId)
+    if (!target) return
+    await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    })
+    await loadCases()
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Lock className="w-8 h-8 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl">Admin Access</CardTitle>
-            <p className="text-muted-foreground">Secure access to the Cyber Scam Recovery Unit admin panel</p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="super@admin.com"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin password"
-                  required
-                />
-              </div>
-              {loginError && (
-                <div className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-md">{loginError}</div>
-              )}
-              <Button type="submit" className="w-full">
-                <Shield className="w-4 h-4 mr-2" />
-                Access Admin Panel
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  const addCaseNote = async (caseId: string, note: string) => {
+    const target = cases.find((c) => c.id === caseId)
+    if (!target) return
+    await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: note }),
+    })
+    await loadCases()
   }
 
   return (
@@ -228,7 +126,6 @@ export default function AdminPage() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
           <div className="lg:col-span-1">
             <AdminStats cases={cases} />
             <div className="mt-6">
@@ -241,7 +138,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-3">
             {selectedCase ? (
               <Card>
@@ -263,7 +159,6 @@ export default function AdminPage() {
                       <TabsTrigger value="details">Case Details</TabsTrigger>
                       <TabsTrigger value="management">Management</TabsTrigger>
                       <TabsTrigger value="chat" className="flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4" />
                         Agent Chat
                       </TabsTrigger>
                     </TabsList>
@@ -272,35 +167,35 @@ export default function AdminPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                           <div>
-                            <Label className="text-sm font-medium">Case Type</Label>
+                            <p className="text-sm font-medium">Case Type</p>
                             <p className="text-sm text-muted-foreground mt-1">{selectedCase.type}</p>
                           </div>
                           <div>
-                            <Label className="text-sm font-medium">Amount Lost</Label>
+                            <p className="text-sm font-medium">Amount Lost</p>
                             <p className="text-sm text-muted-foreground mt-1">
                               {selectedCase.amount} {selectedCase.currency}
                             </p>
                           </div>
                           <div>
-                            <Label className="text-sm font-medium">Contact Email</Label>
+                            <p className="text-sm font-medium">Contact Email</p>
                             <p className="text-sm text-muted-foreground mt-1">{selectedCase.contactEmail}</p>
                           </div>
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <Label className="text-sm font-medium">Submission Date</Label>
+                            <p className="text-sm font-medium">Submission Date</p>
                             <p className="text-sm text-muted-foreground mt-1">
                               {new Date(selectedCase.submissionDate).toLocaleDateString()}
                             </p>
                           </div>
                           <div>
-                            <Label className="text-sm font-medium">Last Update</Label>
+                            <p className="text-sm font-medium">Last Update</p>
                             <p className="text-sm text-muted-foreground mt-1">
                               {new Date(selectedCase.lastUpdate).toLocaleDateString()}
                             </p>
                           </div>
                           <div>
-                            <Label className="text-sm font-medium">Current Status</Label>
+                            <p className="text-sm font-medium">Current Status</p>
                             <p className="text-sm text-muted-foreground mt-1">
                               {selectedCase.status.replace("-", " ").toUpperCase()}
                             </p>
@@ -308,7 +203,7 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium">Description</Label>
+                        <p className="text-sm font-medium">Description</p>
                         <p className="text-sm text-muted-foreground mt-1 p-3 bg-muted rounded-md">
                           {selectedCase.description}
                         </p>
@@ -323,7 +218,7 @@ export default function AdminPage() {
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div>
-                              <Label htmlFor="status">Case Status</Label>
+                              <p id="status" className="mb-2">Case Status</p>
                               <Select
                                 value={selectedCase.status}
                                 onValueChange={(value) => updateCaseStatus(selectedCase.id, value)}
@@ -360,7 +255,7 @@ export default function AdminPage() {
                               className="space-y-4"
                             >
                               <div>
-                                <Label htmlFor="note">Internal Note</Label>
+                                <label htmlFor="note" className="text-sm font-medium">Internal Note</label>
                                 <Textarea id="note" name="note" placeholder="Add internal case notes..." rows={3} />
                               </div>
                               <Button type="submit" size="sm">
