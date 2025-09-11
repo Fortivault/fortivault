@@ -15,6 +15,7 @@ import { AdminCaseList } from "@/components/admin/admin-case-list"
 import { AdminStats } from "@/components/admin/admin-stats"
 import { AgentChatSystem } from "@/components/chat/agent-chat-system"
 import { Shield, Users, FileText } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 interface AdminCase {
   id: string
@@ -35,6 +36,7 @@ export default function AdminPage() {
   const [cases, setCases] = useState<AdminCase[]>([])
   const [selectedCase, setSelectedCase] = useState<AdminCase | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClient()
 
   useEffect(() => {
     loadCases()
@@ -42,6 +44,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     try {
+      await supabase.auth.signOut()
       await fetch("/api/admin/logout", { method: "POST" })
     } finally {
       window.location.href = "/admin/login"
@@ -51,7 +54,12 @@ export default function AdminPage() {
   const loadCases = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch("/api/admin/cases", { cache: "no-store" })
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const res = await fetch("/api/admin/cases", {
+        cache: "no-store",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
       if (!res.ok) throw new Error("Failed to fetch cases")
       const json = await res.json()
       const loadedCases: AdminCase[] = (json.cases || []).map((c: any) => ({
@@ -86,9 +94,11 @@ export default function AdminPage() {
   const updateCaseStatus = async (caseId: string, newStatus: string) => {
     const target = cases.find((c) => c.id === caseId)
     if (!target) return
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
     await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/status`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ status: newStatus }),
     })
     await loadCases()
@@ -97,9 +107,11 @@ export default function AdminPage() {
   const addCaseNote = async (caseId: string, note: string) => {
     const target = cases.find((c) => c.id === caseId)
     if (!target) return
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
     await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/notes`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ content: note }),
     })
     await loadCases()
