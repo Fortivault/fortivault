@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { z } from "zod"
-import bcrypt from "bcryptjs"
 
 const SetupSchema = z.object({
   email: z.string().email(),
@@ -11,15 +10,10 @@ const SetupSchema = z.object({
 export async function GET() {
   try {
     const supabase = createAdminClient()
-    const { count, error } = await supabase
-      .from("admin_users")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active")
-
+    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    const needsSetup = (count ?? 0) === 0
-    return NextResponse.json({ needsSetup })
+    const hasAdmin = (data?.users || []).some((u) => (u.user_metadata as any)?.role === "admin")
+    return NextResponse.json({ needsSetup: !hasAdmin })
   } catch (err) {
     return NextResponse.json({ error: "Failed to check setup status" }, { status: 500 })
   }
@@ -35,34 +29,21 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Ensure no active admin exists yet
-    const { count, error: countErr } = await supabase
-      .from("admin_users")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active")
+    // Ensure no admin exists yet
+    const { data, error: listErr } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
+    if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 })
+    const hasAdmin = (data?.users || []).some((u) => (u.user_metadata as any)?.role === "admin")
+    if (hasAdmin) return NextResponse.json({ error: "Admin already initialized" }, { status: 409 })
 
-    if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 })
-
-    if ((count ?? 0) > 0) {
-      return NextResponse.json({ error: "Admin already initialized" }, { status: 409 })
-    }
-
-    const password_hash = await bcrypt.hash(parsed.data.password, 10)
-
-    const { data, error } = await supabase
-      .from("admin_users")
-      .insert({
-        email: parsed.data.email.toLowerCase(),
-        name: null,
-        status: "active",
-        password_hash,
-      })
-      .select("id, email, name, status")
-      .single()
-
+    const { data: created, error } = await supabase.auth.admin.createUser({
+      email: parsed.data.email.toLowerCase().trim(),
+      password: parsed.data.password,
+      email_confirm: true,
+      user_metadata: { role: "admin" },
+    })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    return NextResponse.json({ admin: data })
+    return NextResponse.json({ admin: { id: created.user?.id, email: created.user?.email, status: "active" } })
   } catch (err) {
     return NextResponse.json({ error: "Failed to initialize admin" }, { status: 500 })
   }
