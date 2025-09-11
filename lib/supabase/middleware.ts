@@ -90,11 +90,9 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAdminRoute) {
-    const token = request.cookies.get("admin_session")?.value
-    const { verifySession } = await import("@/lib/security/session")
-    const payload = token ? await verifySession(token) : null
     const isLogin = request.nextUrl.pathname === "/admin/login"
-    if (!payload && !isLogin) {
+    const role = (user?.user_metadata as any)?.role
+    if (!isLogin && role !== "admin") {
       const url = request.nextUrl.clone()
       url.pathname = "/admin/login"
       return NextResponse.redirect(url)

@@ -1,15 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { verifySession } from "@/lib/security/session"
+import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 
 const Schema = z.object({ status: z.string().min(1).max(64) })
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const token = request.cookies.get("admin_session")?.value
-    const payload = token ? await verifySession(token) : null
-    if (!payload || payload.role !== "admin") {
+    const supabaseAuth = await createClient()
+    const {
+      data: { user },
+    } = await supabaseAuth.auth.getUser()
+    const role = (user?.user_metadata as any)?.role
+    if (role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
