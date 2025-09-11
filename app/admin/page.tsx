@@ -25,6 +25,8 @@ interface AdminCase {
   lastUpdate: string
   contactEmail: string
   description: string
+  recordId: string
+  assignedAgentId: string | null
 }
 
 export default function AdminPage() {
@@ -44,88 +46,61 @@ export default function AdminPage() {
     }
   }
 
-  const loadCases = () => {
+  const loadCases = async () => {
     setIsLoading(true)
-    const loadedCases: AdminCase[] = []
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key?.startsWith("case_")) {
-        const caseData = localStorage.getItem(key)
-        if (caseData) {
-          const parsedCase = JSON.parse(caseData)
-          loadedCases.push({
-            id: parsedCase.caseId,
-            type:
-              parsedCase.scamType === "crypto"
-                ? "Cryptocurrency Fraud"
-                : parsedCase.scamType === "fiat"
-                  ? "Wire Transfer Fraud"
-                  : "Other Fraud",
-            amount: parsedCase.amount,
-            currency: parsedCase.currency,
-            status: parsedCase.status || "intake",
-            priority: "high",
-            submissionDate: parsedCase.submissionDate,
-            lastUpdate: parsedCase.submissionDate,
-            contactEmail: parsedCase.contactEmail,
-            description: parsedCase.description,
-          })
-        }
-      }
-    }
-
-    setCases(loadedCases)
-    if (loadedCases.length > 0) {
-      setSelectedCase(loadedCases[0])
-    }
-    setIsLoading(false)
-  }
-
-  const updateCaseStatus = (caseId: string, newStatus: string) => {
-    const caseKey = `case_${caseId}`
-    const caseData = localStorage.getItem(caseKey)
-    if (caseData) {
-      const parsedCase = JSON.parse(caseData)
-      parsedCase.status = newStatus
-      parsedCase.lastUpdate = new Date().toISOString()
-      localStorage.setItem(caseKey, JSON.stringify(parsedCase))
-
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: caseKey,
-          newValue: JSON.stringify(parsedCase),
-        }),
-      )
-
-      loadCases()
+    try {
+      const res = await fetch("/api/admin/cases", { cache: "no-store" })
+      if (!res.ok) throw new Error("Failed to fetch cases")
+      const json = await res.json()
+      const loadedCases: AdminCase[] = (json.cases || []).map((c: any) => ({
+        id: c.case_id,
+        type:
+          c.scam_type === "crypto"
+            ? "Cryptocurrency Fraud"
+            : c.scam_type === "fiat"
+              ? "Wire Transfer Fraud"
+              : c.scam_type,
+        amount: (c.amount ?? "").toString(),
+        currency: c.currency || "",
+        status: c.status,
+        priority: c.priority,
+        submissionDate: c.created_at,
+        lastUpdate: c.updated_at,
+        contactEmail: c.victim_email,
+        description: c.description || "",
+        recordId: c.id,
+        assignedAgentId: c.assigned_agent_id,
+      }))
+      setCases(loadedCases)
+      setSelectedCase(loadedCases[0] || null)
+    } catch (e) {
+      setCases([])
+      setSelectedCase(null)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const addCaseNote = (caseId: string, note: string) => {
-    const caseKey = `case_${caseId}`
-    const caseData = localStorage.getItem(caseKey)
-    if (caseData) {
-      const parsedCase = JSON.parse(caseData)
-      if (!parsedCase.notes) parsedCase.notes = []
-      parsedCase.notes.push({
-        id: Date.now().toString(),
-        content: note,
-        timestamp: new Date().toISOString(),
-        author: "Admin",
-      })
-      parsedCase.lastUpdate = new Date().toISOString()
-      localStorage.setItem(caseKey, JSON.stringify(parsedCase))
+  const updateCaseStatus = async (caseId: string, newStatus: string) => {
+    const target = cases.find((c) => c.id === caseId)
+    if (!target) return
+    await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    })
+    await loadCases()
+  }
 
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: caseKey,
-          newValue: JSON.stringify(parsedCase),
-        }),
-      )
-
-      loadCases()
-    }
+  const addCaseNote = async (caseId: string, note: string) => {
+    const target = cases.find((c) => c.id === caseId)
+    if (!target) return
+    await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: note }),
+    })
+    await loadCases()
   }
 
   return (
