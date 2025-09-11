@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid input" }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const caseData: Inserts<"cases"> = {
       case_id: parsed.data.caseId,
