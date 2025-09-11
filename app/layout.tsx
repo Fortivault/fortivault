@@ -74,6 +74,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <AuthProviderWrapper>{children}</AuthProviderWrapper>
+            <RouteTransitionOverlay />
           </ThemeProvider>
         </Suspense>
         <Analytics />
