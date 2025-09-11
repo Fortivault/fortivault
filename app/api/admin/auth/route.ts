@@ -22,11 +22,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const parsed = LoginSchema.safeParse(body)
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 })
-    }
-    const { email, password } = parsed.data
+  const parsed = LoginSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 })
+  }
+  const { email, password } = parsed.data
+  const normalizedEmail = email.toLowerCase().trim()
 
     const idKey = `ip:${ip}:email:${email}:admin_auth`
     const allowed = rateLimiter.isAllowed(idKey, { windowMs: 60 * 1000, maxRequests: 5 })
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     const { data: admin, error } = await supabase
       .from("admin_users")
       .select("*")
-      .eq("email", email)
+      .eq("email", normalizedEmail)
       .eq("status", "active")
       .single()
 
