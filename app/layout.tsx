@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProviderWrapper } from "@/components/auth/auth-provider"
 import { Suspense } from "react"
 import "./globals.css"
+import { RouteTransitionOverlay } from "@/components/ui/route-transition-overlay"
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://fortivault.example.com"),
