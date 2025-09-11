@@ -36,9 +36,7 @@ export default function AdminLoginPage() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        localStorage.setItem("adminAuth", "true")
-        localStorage.setItem("adminData", JSON.stringify(data.admin))
+        await response.json()
         router.push("/admin")
       } else {
         setError("Invalid admin credentials")
