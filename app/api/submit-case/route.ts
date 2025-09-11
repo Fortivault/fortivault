@@ -76,18 +76,9 @@ export async function POST(request: NextRequest) {
 
     try {
       const forwardData = new FormData()
-      forwardData.append("caseId", parsed.data.caseId)
-      forwardData.append("contactEmail", parsed.data.contactEmail)
-      if (parsed.data.contactPhone) forwardData.append("contactPhone", parsed.data.contactPhone)
-      forwardData.append("scamType", parsed.data.scamType)
-      if (parsed.data.amount ?? "") forwardData.append("amount", String(parsed.data.amount))
-      if (parsed.data.currency ?? "") forwardData.append("currency", String(parsed.data.currency))
-      if (parsed.data.timeline ?? "") forwardData.append("timeline", String(parsed.data.timeline))
-      if (parsed.data.description ?? "") forwardData.append("description", String(parsed.data.description))
-      const tx = formData.get("transactionHashes") as string | null
-      const refs = formData.get("bankReferences") as string | null
-      if (tx) forwardData.append("transactionHashes", tx)
-      if (refs) forwardData.append("bankReferences", refs)
+      for (const [key, value] of formData.entries()) {
+        forwardData.append(key, value as Blob | string)
+      }
 
       await fetch(formspreeEndpoint, {
         method: "POST",
