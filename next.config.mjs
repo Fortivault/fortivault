@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs"
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
@@ -13,4 +15,8 @@ const nextConfig = {
   allowedDevOrigins: ["*.fly.dev"],
 }
 
-export default nextConfig
+const sentryWebpackPluginOptions = {
+  silent: true,
+}
+
+export default withSentryConfig(nextConfig, sentryWebpackPluginOptions)
