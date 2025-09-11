@@ -18,6 +18,7 @@ export function SuccessStep({ caseId, userEmail }: SuccessStepProps) {
   const [isVerified, setIsVerified] = useState(false)
   const [showProgress, setShowProgress] = useState(false)
   const [progressStep, setProgressStep] = useState(0)
+  const [cooldown, setCooldown] = useState(0)
 
   useEffect(() => {
     const sendOTP = async () => {
@@ -37,6 +38,7 @@ export function SuccessStep({ caseId, userEmail }: SuccessStepProps) {
         if (result.success) {
           console.log("[v0] OTP sent successfully")
           setShowVerification(true)
+          setCooldown(30)
         } else {
           console.error("[v0] Failed to send OTP:", result.error)
         }
@@ -50,6 +52,12 @@ export function SuccessStep({ caseId, userEmail }: SuccessStepProps) {
     }, 2000)
     return () => clearTimeout(timer)
   }, [userEmail, caseId])
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : 0)), 1000)
+    return () => clearInterval(t)
+  }, [cooldown])
 
   const handleVerification = async () => {
     if (verificationCode.length !== 6) return
@@ -238,13 +246,33 @@ export function SuccessStep({ caseId, userEmail }: SuccessStepProps) {
                     maxLength={6}
                   />
 
-                  <Button
-                    onClick={handleVerification}
-                    disabled={verificationCode.length !== 6 || isVerifying}
-                    className="w-full"
-                  >
-                    {isVerifying ? "Verifying..." : "Verify Email"}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      onClick={handleVerification}
+                      disabled={verificationCode.length !== 6 || isVerifying}
+                    >
+                      {isVerifying ? "Verifying..." : "Verify"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={cooldown > 0}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch("/api/send-otp", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ email: userEmail, caseId }),
+                          })
+                          const ok = await res.json()
+                          if (ok.success) setCooldown(30)
+                        } catch (e) {
+                          console.error("[v0] Resend OTP error:", e)
+                        }
+                      }}
+                    >
+                      {cooldown > 0 ? `Resend (${cooldown}s)` : "Resend"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </motion.div>
