@@ -1,15 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
-import { verifySession } from "@/lib/security/session"
+import { getAdminContext, isAuthorizedAdmin } from "@/lib/supabase/admin-auth"
 import { z } from "zod"
 
 const Schema = z.object({ status: z.string().min(1).max(64) })
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const token = request.cookies.get("admin_session")?.value
-    const payload = token ? await verifySession(token) : null
-    if (!payload || payload.role !== "admin") {
+    const ctx = await getAdminContext(request)
+    if (!isAuthorizedAdmin(ctx)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -19,8 +17,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
-    const { data, error } = await supabase
+    const { data, error } = await ctx.supabase
       .from("cases")
       .update({ status: parsed.data.status, updated_at: new Date().toISOString() })
       .eq("id", params.id)

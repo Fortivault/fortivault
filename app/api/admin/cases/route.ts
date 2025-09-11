@@ -1,17 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
-import { verifySession } from "@/lib/security/session"
+import { getAdminContext, isAuthorizedAdmin } from "@/lib/supabase/admin-auth"
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("admin_session")?.value
-    const payload = token ? await verifySession(token) : null
-    if (!payload || payload.role !== "admin") {
+    const ctx = await getAdminContext(request)
+    if (!isAuthorizedAdmin(ctx)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    const supabase = createAdminClient()
-    const { data, error } = await supabase
+    const { data, error } = await ctx.supabase
       .from("cases")
       .select("id, case_id, victim_email, scam_type, amount, currency, status, priority, description, created_at, updated_at, assigned_agent_id")
       .order("updated_at", { ascending: false })

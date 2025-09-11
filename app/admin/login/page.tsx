@@ -10,6 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -39,18 +40,22 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/admin/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
       })
-
-      if (response.ok) {
-        await response.json()
-        router.push("/admin")
+      if (error) {
+        setError(error.message || "Invalid admin credentials")
       } else {
-        const j = await response.json().catch(() => ({}))
-        setError(j.error || "Invalid admin credentials")
+        const { data } = await supabase.auth.getUser()
+        const isAdmin = (data.user?.user_metadata as any)?.role === "admin"
+        if (!isAdmin) {
+          await supabase.auth.signOut()
+          setError("This account is not authorized for admin access")
+        } else {
+          router.push("/admin")
+        }
       }
     } catch {
       setError("Authentication failed. Please try again.")
@@ -83,16 +88,15 @@ export default function AdminLoginPage() {
         setIsLoading(false)
         return
       }
-      // Auto-login
-      const login = await fetch("/api/admin/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: setupData.email, password: setupData.password }),
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({
+        email: setupData.email.trim().toLowerCase(),
+        password: setupData.password,
       })
-      if (login.ok) {
-        router.push("/admin")
-      } else {
+      if (error) {
         setNeedsSetup(false)
+      } else {
+        router.push("/admin")
       }
     } catch {
       setError("Failed to initialize admin")
