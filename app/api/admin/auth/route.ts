@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const res = NextResponse.json({ success: true, admin: adminData as AdminUserPublic })
     res.cookies.set("admin_session", token, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
