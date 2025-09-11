@@ -66,6 +66,7 @@ export async function updateSession(request: NextRequest) {
     "/cookies",
     "/login",
     "/signup",
+    "/victim/complete-signup",
     "/admin/login",
     "/agent/login",
   ]
