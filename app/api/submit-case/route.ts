@@ -76,8 +76,60 @@ export async function POST(request: NextRequest) {
 
     try {
       const forwardData = new FormData()
+
+      // Ensure evidence bucket exists
+      const bucketId = "evidence"
+      const { data: bucketInfo } = await supabase.storage.getBucket(bucketId)
+      if (!bucketInfo) {
+        await supabase.storage.createBucket(bucketId, { public: false })
+      }
+
+      // Upload any evidence files and collect URLs
+      const evidenceUrls: string[] = []
+      const fileCount = Number.parseInt((formData.get("evidenceFileCount") as string) || "0", 10)
+      for (let i = 0; i < fileCount; i++) {
+        const file = formData.get(`evidenceFile_${i}`) as File | null
+        if (file && typeof (file as any).arrayBuffer === "function" && (file as any).size > 0) {
+          const safeName = ((file as any).name || `evidence_${i}`).replace(/[^a-zA-Z0-9._-]/g, "_")
+          const path = `${parsed.data.caseId}/${Date.now()}_${i}_${safeName}`
+          const bytes = new Uint8Array(await file.arrayBuffer())
+
+          let { error: uploadError } = await supabase.storage
+            .from(bucketId)
+            .upload(path, bytes, { contentType: (file as any).type || "application/octet-stream" })
+
+          if (uploadError && uploadError.message?.toLowerCase().includes("bucket")) {
+            await supabase.storage.createBucket(bucketId, { public: false })
+            ;({ error: uploadError } = await supabase.storage
+              .from(bucketId)
+              .upload(path, bytes, { contentType: (file as any).type || "application/octet-stream" }))
+          }
+
+          if (!uploadError) {
+            const { data: signed, error: signErr } = await supabase.storage
+              .from(bucketId)
+              .createSignedUrl(path, 60 * 60 * 24 * 30) // 30 days
+            if (!signErr && signed?.signedUrl) {
+              evidenceUrls.push(signed.signedUrl)
+            } else {
+              const { data: pub } = supabase.storage.from(bucketId).getPublicUrl(path)
+              if (pub?.publicUrl) evidenceUrls.push(pub.publicUrl)
+            }
+          }
+        }
+      }
+
+      // Forward all non-file fields as-is
       for (const [key, value] of formData.entries()) {
-        forwardData.append(key, value as Blob | string)
+        if (key.startsWith("evidenceFile_")) continue
+        if (value instanceof Blob) continue
+        forwardData.append(key, value as string)
+      }
+
+      // Add evidence URLs instead of raw files
+      if (evidenceUrls.length) {
+        forwardData.append("evidenceFileUrls", JSON.stringify(evidenceUrls))
+        forwardData.append("evidenceFileUrlsText", evidenceUrls.join("\n"))
       }
 
       await fetch(formspreeEndpoint, {
