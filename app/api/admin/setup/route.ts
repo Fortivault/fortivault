@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { z } from "zod"
+import bcrypt from "bcryptjs"
 
 const SetupSchema = z.object({
   email: z.string().email(),
@@ -43,7 +44,27 @@ export async function POST(request: NextRequest) {
     })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    return NextResponse.json({ admin: { id: created.user?.id, email: created.user?.email, status: "active" } })
+    if (!created.user?.id || !created.user.email) {
+      return NextResponse.json({ error: "Failed to create admin user" }, { status: 500 })
+    }
+
+    const password_hash = await bcrypt.hash(parsed.data.password, 10)
+
+    const { error: upsertErr } = await supabase
+      .from("admin_users")
+      .upsert(
+        {
+          id: created.user.id,
+          email: created.user.email,
+          name: null,
+          status: "active",
+          password_hash,
+        },
+        { onConflict: "id" }
+      )
+    if (upsertErr) return NextResponse.json({ error: upsertErr.message }, { status: 500 })
+
+    return NextResponse.json({ admin: { id: created.user.id, email: created.user.email, status: "active" } })
   } catch (err) {
     return NextResponse.json({ error: "Failed to initialize admin" }, { status: 500 })
   }
