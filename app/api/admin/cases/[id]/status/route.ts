@@ -1,18 +1,34 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 
 const Schema = z.object({ status: z.string().min(1).max(64) })
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabaseAuth = await createClient()
-    const {
-      data: { user },
-    } = await supabaseAuth.auth.getUser()
-    const role = (user?.user_metadata as any)?.role
-    if (role !== "admin") {
+    const supabase = createAdminClient()
+
+    const authHeader = request.headers.get("authorization") || request.headers.get("Authorization")
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null
+
+    let email: string | null = null
+    if (token) {
+      const { data: userRes, error: userErr } = await supabase.auth.getUser(token)
+      if (userErr || !userRes?.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+      email = userRes.user.email ?? null
+    } else {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { data: adminRow, error: adminErr } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("email", email)
+      .eq("status", "active")
+      .single()
+    if (adminErr || !adminRow) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -22,7 +38,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
     const { data, error } = await supabase
       .from("cases")
       .update({ status: parsed.data.status, updated_at: new Date().toISOString() })
