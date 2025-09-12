@@ -6,8 +6,7 @@ export const WelcomeEmailTemplate = ({
   firstName: string
   caseId: string
   dashboardLink: string
-}) => `
-<!DOCTYPE html>
+}) => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -18,7 +17,7 @@ export const WelcomeEmailTemplate = ({
     
     <!-- Header with logo -->
     <div style="background: #ffffff; padding: 25px; text-align: center; border-bottom: 3px solid #1e40af;">
-      <img src="https://i.ibb.co/ZR1YwGjZ/Adobe-Express-file.png" alt="Fortivault Logo" style="max-height: 100px; margin-bottom: 10px;">
+      <img src="https://cdn.builder.io/o/assets%2F4d1ea422cbad4023970de8a82b0005dd%2Fce8d45edabec460e9b8cb1666d123063?alt=media&token=5b67c392-d765-4b9a-a34c-f5e4608240f6&apiKey=4d1ea422cbad4023970de8a82b0005dd" alt="Fortivault Logo" style="max-height: 100px; margin-bottom: 10px;" />
     </div>
 
     <!-- Body -->
@@ -52,7 +51,7 @@ export const WelcomeEmailTemplate = ({
         <li>Track your case progress and recovery status in real-time</li>
       </ul>
 
-      <p style="margin-top: 30px;">If you have any immediate questions, please contact our support team at <a href="mailto:fortivault@aol.com" style="color:#1e40af; text-decoration:none;">support@fortivault</a>.</p>
+      <p style="margin-top: 30px;">If you have any immediate questions, please contact our support team at <a href="mailto:support@fortivault" style="color:#1e40af; text-decoration:none;">support@fortivault</a>.</p>
 
 
     <!-- Footer -->
@@ -60,29 +59,29 @@ export const WelcomeEmailTemplate = ({
       <p style="margin: 4px 0;">&copy; ${new Date().getFullYear()} Fortivault. All rights reserved.</p>
       <p style="margin: 4px 0;">Fortivault, Inc. | Confidential & Secure Communication</p>
       <p style="margin: 4px 0;">
-        <a href="mailto:Fortivault@aol.com" style="color:#1e40af; text-decoration:none;">support@fortivault</a> | 
-        <a href="mailto:Fortivault@aol.com" style="color:#1e40af; text-decoration:none;">inquiries@fortivault</a>
+        <a href="mailto:support@fortivault" style="color:#1e40af; text-decoration:none;">support@fortivault</a> | 
+        <a href="mailto:inquiries@fortivault" style="color:#1e40af; text-decoration:none;">inquiries@fortivault</a>
       </p>
       <a href="https://www.instagram.com/fortivault1?igsh=Yjl0NDF0ZnRzd2Jr" target="_blank" style="display:inline-block; margin-top:10px;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width:24px; height:24px;">
+        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width:24px; height:24px;" />
       </a>
       <div style="margin-top:10px;">
-        <img src="https://i.ibb.co/ZR1YwGjZ/Adobe-Express-file.png" alt="Fortivault Mini Logo" style="max-height: 25px;">
+        <img src="https://cdn.builder.io/o/assets%2F4d1ea422cbad4023970de8a82b0005dd%2Fce8d45edabec460e9b8cb1666d123063?alt=media&token=5b67c392-d765-4b9a-a34c-f5e4608240f6&apiKey=4d1ea422cbad4023970de8a82b0005dd" alt="Fortivault Mini Logo" style="max-height: 25px;" />
       </div>
     </div>
   </div>
 </body>
-</html>
-`
+</html>`
 
 export const OTPEmailTemplate = ({
   firstName,
   otpCode,
+  verifyLink,
 }: {
   firstName: string
   otpCode: string
-}) => `
-<!DOCTYPE html>
+  verifyLink?: string
+}) => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -93,7 +92,7 @@ export const OTPEmailTemplate = ({
     
     <!-- Header with logo -->
     <div style="background: #ffffff; padding: 25px; text-align: center; border-bottom: 3px solid #1e40af;">
-      <img src="https://i.ibb.co/ZR1YwGjZ/Adobe-Express-file.png" alt="Fortivault Logo" style="max-height: 100px; margin-bottom: 10px;">
+      <img src="https://cdn.builder.io/o/assets%2F4d1ea422cbad4023970de8a82b0005dd%2Fce8d45edabec460e9b8cb1666d123063?alt=media&token=5b67c392-d765-4b9a-a34c-f5e4608240f6&apiKey=4d1ea422cbad4023970de8a82b0005dd" alt="Fortivault Logo" style="max-height: 100px; margin-bottom: 10px;" />
     </div>
 
     <!-- Body -->
@@ -110,6 +109,8 @@ export const OTPEmailTemplate = ({
 
       <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px;">This code will expire in 10 minutes for security purposes.</p>
 
+      ${verifyLink ? `<div style="text-align:center; margin-top:20px;"><a href="${verifyLink}" style="background: #1e40af; color: white; padding: 12px 22px; text-decoration: none; border-radius: 8px; display:inline-block;">Verify & Continue</a></div>` : ""}
+
       <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; border-left: 4px solid #f59e0b;">
         <p style="margin: 0; font-size: 14px; color: #92400e;">
           <strong>Security Notice:</strong> If you didn't request this verification, please ignore this email.
@@ -122,15 +123,14 @@ export const OTPEmailTemplate = ({
       <p style="margin: 4px 0;">&copy; ${new Date().getFullYear()} Fortivault. All rights reserved.</p>
       <p style="margin: 4px 0;">Fortivault, Inc. | Confidential & Secure Communication</p>
       <p style="margin: 4px 0;">
-        <a href="mailto:Fortivault@aol.com" style="color:#1e40af; text-decoration:none;">support@fortivault</a> | 
-        <a href="mailto:Fortivault@aol.com" style="color:#1e40af; text-decoration:none;">inquiries@fortivault.>
-        </a>
+        <a href="mailto:support@fortivault" style="color:#1e40af; text-decoration:none;">support@fortivault</a> | 
+        <a href="mailto:inquiries@fortivault" style="color:#1e40af; text-decoration:none;">inquiries@fortivault</a>
       </p>
       <a href="https://www.instagram.com/fortivault1?igsh=Yjl0NDF0ZnRzd2Jr" target="_blank" style="display:inline-block; margin-top:10px;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width:24px; height:24px;">
+        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width:24px; height:24px;" />
       </a>
       <div style="margin-top:10px;">
-        <img src="https://i.ibb.co/ZR1YwGjZ/Adobe-Express-file.png" alt="Fortivault Mini Logo" style="max-height: 25px;">
+        <img src="https://cdn.builder.io/o/assets%2F4d1ea422cbad4023970de8a82b0005dd%2Fce8d45edabec460e9b8cb1666d123063?alt=media&token=5b67c392-d765-4b9a-a34c-f5e4608240f6&apiKey=4d1ea422cbad4023970de8a82b0005dd" alt="Fortivault Mini Logo" style="max-height: 25px;" />
       </div>
     </div>
 
