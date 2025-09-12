@@ -7,8 +7,32 @@ interface EmailOptions {
   text?: string
 }
 
+const CANONICAL_TEMPLATE_URL =
+  "https://cdn.builder.io/o/assets%2F4d1ea422cbad4023970de8a82b0005dd%2Fce8d45edabec460e9b8cb1666d123063?alt=media&token=5b67c392-d765-4b9a-a34c-f5e4608240f6&apiKey=4d1ea422cbad4023970de8a82b0005dd"
+
+function stripHtml(html: string) {
+  return html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
+}
+
+function renderTemplate(template: string, vars: Record<string, string | undefined>) {
+  let out = template
+  // Replace common placeholder variants
+  for (const [k, v] of Object.entries(vars)) {
+    if (v == null) continue
+    const patterns = [
+      new RegExp(`{{\\s*${k}\\s*}}`, "gi"),
+      new RegExp(`{{\\s*${k.toUpperCase()}\\s*}}`, "gi"),
+      new RegExp(`{{\\s*${k.toLowerCase()}\\s*}}`, "gi"),
+      new RegExp(`\\$\\{\\s*${k}\\s*\\}`, "gi"),
+    ]
+    for (const p of patterns) out = out.replace(p, v)
+  }
+  return out
+}
+
 class EmailService {
   private transporter: nodemailer.Transporter
+  private templateCache: string | null = null
 
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -22,6 +46,21 @@ class EmailService {
     })
   }
 
+  private async loadCanonicalTemplate(): Promise<string> {
+    if (this.templateCache) return this.templateCache
+    try {
+      const res = await fetch(CANONICAL_TEMPLATE_URL)
+      if (!res.ok) throw new Error("Failed to fetch canonical template")
+      const text = await res.text()
+      this.templateCache = text
+      return text
+    } catch (err) {
+      console.warn("[v0] Could not load canonical email template, falling back to built-in templates:", err)
+      this.templateCache = ""
+      return ""
+    }
+  }
+
   async sendEmail({ to, subject, html, text }: EmailOptions) {
     try {
       const info = await this.transporter.sendMail({
@@ -29,7 +68,7 @@ class EmailService {
         to,
         subject,
         html,
-        text: text || html.replace(/<[^>]*>/g, ""), // Strip HTML for text version
+        text: text || stripHtml(html),
       })
 
       console.log("[v0] Email sent successfully:", info.messageId)
@@ -44,71 +83,95 @@ class EmailService {
     }
   }
 
+  // Use canonical template when available. Do not alter design — inject values into placeholders.
   async sendOTP(email: string, otp: string, caseId: string) {
     const subject = "Verify Your Email - Fortivault"
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    const canonical = await this.loadCanonicalTemplate()
+    let html = canonical
+
+    if (canonical && canonical.length > 0) {
+      html = renderTemplate(canonical, {
+        OTP: otp,
+        otpCode: otp,
+        CASE_ID: caseId,
+        caseId,
+        EMAIL: email,
+      })
+    } else {
+      // Fallback built-in HTML (keeps functionality if fetch fails)
+      html = `      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #1e3a8a 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">Email Verification Required</h1>
         </div>
-        
+
         <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0;">
           <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
             Thank you for submitting your fraud report. To proceed with your case, please verify your email address.
           </p>
-          
+
           <div style="background: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; border: 2px dashed #059669;">
             <p style="font-size: 14px; color: #64748b; margin-bottom: 10px;">Your Verification Code:</p>
             <h2 style="font-size: 32px; color: #1e3a8a; letter-spacing: 8px; margin: 0; font-family: monospace;">${otp}</h2>
           </div>
-          
+
           <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
             <strong>Case ID:</strong> ${caseId}<br>
             <strong>Valid for:</strong> 10 minutes
           </p>
-          
+
           <div style="background: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b;">
             <p style="font-size: 14px; color: #92400e; margin: 0;">
               <strong>Security Notice:</strong> Never share this code with anyone. Our team will never ask for this code via phone or email.
             </p>
           </div>
         </div>
-        
+
         <div style="text-align: center; padding: 20px; color: #64748b; font-size: 12px;">
           <p>Fortivault | Built to protect. Trusted to Secure</p>
         </div>
-      </div>
-    `
+      </div>`
+    }
 
     return this.sendEmail({ to: email, subject, html })
   }
 
   async sendWelcomeEmail(email: string, caseId: string, dashboardLink: string) {
     const subject = "Welcome to Fortivault - Your Dashboard is Ready"
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    const canonical = await this.loadCanonicalTemplate()
+    let html = canonical
+
+    if (canonical && canonical.length > 0) {
+      html = renderTemplate(canonical, {
+        DASHBOARD_LINK: dashboardLink,
+        dashboardLink,
+        CASE_ID: caseId,
+        caseId,
+        EMAIL: email,
+      })
+    } else {
+      html = `      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #1e3a8a 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to Your Recovery Journey</h1>
         </div>
-        
+
         <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0;">
           <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
             Your fraud report has been successfully submitted and your secure dashboard is now ready.
           </p>
-          
+
           <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
             <h3 style="color: #1e3a8a; margin-top: 0;">Case Details:</h3>
             <p style="margin: 5px 0;"><strong>Case ID:</strong> ${caseId}</p>
             <p style="margin: 5px 0;"><strong>Status:</strong> Under Review</p>
             <p style="margin: 5px 0;"><strong>Assigned Agent:</strong> Will be assigned within 24 hours</p>
           </div>
-          
+
           <div style="text-align: center; margin: 30px 0;">
             <a href="${dashboardLink}" style="background: linear-gradient(135deg, #1e3a8a 0%, #059669 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
               Access Your Dashboard
             </a>
           </div>
-          
+
           <div style="background: #ecfdf5; padding: 15px; border-radius: 6px; border-left: 4px solid #059669;">
             <h4 style="color: #065f46; margin-top: 0;">What happens next?</h4>
             <ul style="color: #065f46; margin: 0; padding-left: 20px;">
@@ -118,20 +181,20 @@ class EmailService {
               <li>We'll begin the recovery process immediately</li>
             </ul>
           </div>
-          
+
           <div style="background: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b; margin-top: 20px;">
             <p style="font-size: 14px; color: #92400e; margin: 0;">
               <strong>Important:</strong> Keep this email safe. Your dashboard link is unique and secure. This link will expire when your case is closed.
             </p>
           </div>
         </div>
-        
+
         <div style="text-align: center; padding: 20px; color: #64748b; font-size: 12px;">
           <p>Fortivault | Built to protect. Trusted to Secure | 24/7 Support Available</p>
           <p>Need help? Reply to this email or contact services.fortivault@gmx.us</p>
         </div>
-      </div>
-    `
+      </div>`
+    }
 
     return this.sendEmail({ to: email, subject, html })
   }
