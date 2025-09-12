@@ -8,3 +8,6 @@ export function register() {
   })
   return Sentry
 }
+
+// Export required router transition hook for Next.js instrumentation
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
