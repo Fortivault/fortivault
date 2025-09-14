@@ -1,9 +1,5 @@
 "use client"
 
-"use client"
-
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,8 +10,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { AdminCaseList } from "@/components/admin/admin-case-list"
 import { AdminStats } from "@/components/admin/admin-stats"
 import { AgentChatSystem } from "@/components/chat/agent-chat-system"
+import { CaseDetailsPanel } from "@/components/admin/case-details"
+import { CaseManagementPanel } from "@/components/admin/case-management"
 import { Shield, Users, FileText } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useAdminRealtime } from "@/hooks/useAdminRealtime"
 
 interface AdminCase {
   id: string
@@ -36,11 +35,24 @@ export default function AdminPage() {
   const [cases, setCases] = useState<AdminCase[]>([])
   const [selectedCase, setSelectedCase] = useState<AdminCase | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [csrfToken, setCsrfToken] = useState<string>("")
   const supabase = createClient()
 
   useEffect(() => {
-    loadCases()
+    loadCases(1)
+    fetch("/api/csrf")
+      .then((r) => r.json())
+      .then((j) => setCsrfToken(j.token))
+      .catch(() => {})
   }, [])
+
+  // Reload on realtime events
+  useAdminRealtime(() => {
+    loadCases(page)
+  })
 
   const handleLogout = async () => {
     try {
@@ -51,25 +63,34 @@ export default function AdminPage() {
     }
   }
 
-  const loadCases = async () => {
+  const loadCases = async (targetPage: number) => {
     setIsLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
-      const res = await fetch("/api/admin/cases", {
+      const res = await fetch(`/api/admin/cases?page=${targetPage}&pageSize=${pageSize}`, {
         cache: "no-store",
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       })
-      if (!res.ok) throw new Error("Failed to fetch cases")
-      const json = await res.json()
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const message = json?.error || json?.message || "Failed to fetch cases"
+        console.error("loadCases error:", message)
+        window.alert(message)
+        setCases([])
+        setSelectedCase(null)
+        return
+      }
+
       const loadedCases: AdminCase[] = (json.cases || []).map((c: any) => ({
         id: c.case_id,
         type:
           c.scam_type === "crypto"
             ? "Cryptocurrency Fraud"
             : c.scam_type === "fiat"
-              ? "Wire Transfer Fraud"
-              : c.scam_type,
+            ? "Wire Transfer Fraud"
+            : c.scam_type,
         amount: (c.amount ?? "").toString(),
         currency: c.currency || "",
         status: c.status,
@@ -81,9 +102,14 @@ export default function AdminPage() {
         recordId: c.id,
         assignedAgentId: c.assigned_agent_id,
       }))
+
       setCases(loadedCases)
-      setSelectedCase(loadedCases[0] || null)
+      setSelectedCase((prev) => (prev && loadedCases.find((x) => x.id === prev.id) ? prev : loadedCases[0] || null))
+      setPage(json.page || targetPage)
+      setTotal(json.total || loadedCases.length)
     } catch (e) {
+      console.error(e)
+      window.alert("Failed to load cases")
       setCases([])
       setSelectedCase(null)
     } finally {
@@ -96,12 +122,21 @@ export default function AdminPage() {
     if (!target) return
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
-    await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/status`, {
+    const res = await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/status`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), "x-csrf-token": csrfToken },
       body: JSON.stringify({ status: newStatus }),
     })
-    await loadCases()
+
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      const msg = json?.error || json?.message || "Failed to update status"
+      console.error(msg)
+      window.alert(msg)
+      return
+    }
+
+    await loadCases(page)
   }
 
   const addCaseNote = async (caseId: string, note: string) => {
@@ -109,12 +144,21 @@ export default function AdminPage() {
     if (!target) return
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
-    await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/notes`, {
+    const res = await fetch(`/api/admin/cases/${encodeURIComponent(target.recordId)}/notes`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), "x-csrf-token": csrfToken },
       body: JSON.stringify({ content: note }),
     })
-    await loadCases()
+
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      const msg = json?.error || json?.message || "Failed to add note"
+      console.error(msg)
+      window.alert(msg)
+      return
+    }
+
+    await loadCases(page)
   }
 
   return (
@@ -178,107 +222,11 @@ export default function AdminPage() {
                     </TabsList>
 
                     <TabsContent value="details" className="mt-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-sm font-medium">Case Type</p>
-                            <p className="text-sm text-muted-foreground mt-1">{selectedCase.type}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Amount Lost</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {selectedCase.amount} {selectedCase.currency}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Contact Email</p>
-                            <p className="text-sm text-muted-foreground mt-1">{selectedCase.contactEmail}</p>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-sm font-medium">Submission Date</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {new Date(selectedCase.submissionDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Last Update</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {new Date(selectedCase.lastUpdate).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Current Status</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {selectedCase.status.replace("-", " ").toUpperCase()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Description</p>
-                        <p className="text-sm text-muted-foreground mt-1 p-3 bg-muted rounded-md">
-                          {selectedCase.description}
-                        </p>
-                      </div>
+                      <CaseDetailsPanel selectedCase={selectedCase} />
                     </TabsContent>
 
                     <TabsContent value="management" className="mt-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-lg">Update Status</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div>
-                              <p id="status" className="mb-2">Case Status</p>
-                              <Select
-                                value={selectedCase.status}
-                                onValueChange={(value) => updateCaseStatus(selectedCase.id, value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="intake">Intake</SelectItem>
-                                  <SelectItem value="under-review">Under Review</SelectItem>
-                                  <SelectItem value="action-recommended">Action Recommended</SelectItem>
-                                  <SelectItem value="closed">Closed</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-lg">Add Case Note</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <form
-                              onSubmit={(e) => {
-                                e.preventDefault()
-                                const formData = new FormData(e.currentTarget)
-                                const note = formData.get("note") as string
-                                if (note.trim()) {
-                                  addCaseNote(selectedCase.id, note.trim())
-                                  e.currentTarget.reset()
-                                }
-                              }}
-                              className="space-y-4"
-                            >
-                              <div>
-                                <label htmlFor="note" className="text-sm font-medium">Internal Note</label>
-                                <Textarea id="note" name="note" placeholder="Add internal case notes..." rows={3} />
-                              </div>
-                              <Button type="submit" size="sm">
-                                Add Note
-                              </Button>
-                            </form>
-                          </CardContent>
-                        </Card>
-                      </div>
+                      <CaseManagementPanel selectedCase={{ id: selectedCase.id, status: selectedCase.status }} onUpdateStatus={updateCaseStatus} onAddNote={addCaseNote} />
                     </TabsContent>
 
                     <TabsContent value="chat" className="mt-6">
@@ -298,6 +246,15 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
             )}
+
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">Page {page} • {cases.length} / {total}</div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page <= 1 || isLoading} onClick={() => loadCases(page - 1)}>Previous</Button>
+                <Button variant="outline" size="sm" disabled={page * pageSize >= total || isLoading} onClick={() => loadCases(page + 1)}>Next</Button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
