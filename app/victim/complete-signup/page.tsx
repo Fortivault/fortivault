@@ -32,8 +32,10 @@ export default function VictimCompleteSignupPage() {
       })
       const data = await res.json()
       if (res.ok && data.success) {
-        setStatus("Your account has been created. You can now sign in.")
-        setTimeout(() => router.push("/login"), 2000)
+        setStatus("Your account has been created. Please check your email for a confirmation code.")
+        // Redirect to confirmation page where user can enter the OTP sent after signup
+        const params = new URLSearchParams({ email, caseId })
+        setTimeout(() => router.push(`/victim/confirm-email?${params.toString()}`), 1500)
       } else {
         setStatus(data.error || "Setup failed. Try again.")
       }
