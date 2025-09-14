@@ -1,19 +1,20 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { emailService } from "@/lib/email-service"
 import { z } from "zod"
 import { createAdminClient } from "@/lib/supabase/admin"
 import bcrypt from "bcryptjs"
 import { rateLimiter } from "@/lib/security/rate-limiter"
 import { signSession } from "@/lib/security/session"
+import { badRequest, serverError, ok } from "@/lib/api/response"
 
 const VerifyOtpSchema = z.object({ email: z.string().email(), otp: z.string().length(6), caseId: z.string().min(3) })
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json()
     const parsed = VerifyOtpSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 })
+      return badRequest("Invalid input")
     }
 
     const { email, otp, caseId } = parsed.data
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     const id = `${ip}:${email}:verify`
     const allowed = rateLimiter.isAllowed(id, { windowMs: 30_000, maxRequests: 5 })
     if (!allowed) {
-      return NextResponse.json({ error: "Too many attempts. Please wait and try again." }, { status: 429 })
+      return badRequest("Too many attempts. Please wait and try again.")
     }
 
     const supabase = createAdminClient()
@@ -35,25 +36,25 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (error || !rec) {
-      return NextResponse.json({ error: "Verification code not found. Request a new one." }, { status: 400 })
+      return badRequest("Verification code not found. Request a new one.")
     }
 
     if (rec.consumed_at) {
-      return NextResponse.json({ error: "Code already used. Request a new one." }, { status: 400 })
+      return badRequest("Code already used. Request a new one.")
     }
 
     if (new Date(rec.expires_at).getTime() < Date.now()) {
-      return NextResponse.json({ error: "Code expired. Request a new one." }, { status: 400 })
+      return badRequest("Code expired. Request a new one.")
     }
 
-    const ok = await bcrypt.compare(otp, rec.code_hash)
-    if (!ok) {
+    const okCheck = await bcrypt.compare(otp, rec.code_hash)
+    if (!okCheck) {
       const { error: updErr } = await supabase
         .from("email_otp")
         .update({ attempts: (rec.attempts || 0) + 1 })
         .eq("id", rec.id)
       if (updErr) console.error("[v0] OTP attempts update error:", updErr)
-      return NextResponse.json({ error: "Invalid code. Please try again." }, { status: 400 })
+      return badRequest("Invalid code. Please try again.")
     }
 
     // Mark consumed
@@ -70,12 +71,13 @@ export async function POST(request: NextRequest) {
     const result = await emailService.sendWelcomeEmail(email, caseId, link)
 
     if (result.success) {
-      return NextResponse.json({ success: true, message: "Email verified successfully" })
+      return ok({ message: "Email verified successfully" })
     } else {
-      return NextResponse.json({ error: "Failed to send welcome email" }, { status: 500 })
+      console.error("[v0] sendWelcomeEmail failed", result.error)
+      return serverError("Failed to send welcome email")
     }
   } catch (error) {
     console.error("[v0] Verify OTP API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return serverError("Internal server error")
   }
 }
