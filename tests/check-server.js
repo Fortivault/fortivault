@@ -1,7 +1,7 @@
 const fetch = global.fetch || require('node-fetch')
 ;(async function(){
   try{
-    const url = process.env.TEST_BASE_URL || 'http://localhost:10000'
+    const url = process.env.TEST_BASE_URL || 'http://127.0.0.1:10000'
     console.log('Checking', url)
     const controller = new AbortController()
     const timeout = setTimeout(()=>controller.abort(), 10000)
