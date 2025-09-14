@@ -1,24 +1,25 @@
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 import { z } from "zod"
 import { verifySession, signSession } from "@/lib/security/session"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { badRequest, serverError, ok } from "@/lib/api/response"
 
 const Schema = z.object({ token: z.string().min(10), caseId: z.string().min(3), password: z.string().min(8) })
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json()
+    const body = await request.json()
     const parsed = Schema.safeParse(body)
-    if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 })
+    if (!parsed.success) return badRequest("Invalid input")
 
     const { token, caseId, password } = parsed.data
     const payload = await verifySession(token)
     if (!payload || payload.type !== "victim_signup") {
-      return NextResponse.json({ error: "Invalid or expired link" }, { status: 400 })
+      return badRequest("Invalid or expired link")
     }
 
     if (payload.caseId !== caseId) {
-      return NextResponse.json({ error: "Case ID does not match." }, { status: 400 })
+      return badRequest("Case ID does not match.")
     }
 
     const email = payload.email as string
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (error) {
-      return NextResponse.json({ error: error.message || "Account creation failed" }, { status: 400 })
+      return badRequest(error.message || "Account creation failed")
     }
 
     // Issue victim_session cookie (optional path-limited)
@@ -42,6 +43,6 @@ export async function POST(req: NextRequest) {
     return res
   } catch (e) {
     console.error("[v0] victim complete-signup error:", e)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return serverError("Internal server error")
   }
 }

@@ -4,6 +4,7 @@ import type { Inserts } from "@/types/database.types"
 import type { Case } from "@/types/entities"
 import { z } from "zod"
 import { getDefaultAgentId } from "@/lib/agents/default-agent"
+import { badRequest, serverError, ok } from "@/lib/api/response"
 
 const SubmitCaseSchema = z.object({
   caseId: z.string().min(3),
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
     const parsed = SubmitCaseSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: "Invalid input" }, { status: 400 })
+      return badRequest("Invalid input")
     }
 
     const supabase = createAdminClient()
@@ -87,22 +88,42 @@ export async function POST(request: NextRequest) {
       // Upload any evidence files and collect URLs
       const evidenceUrls: string[] = []
       const fileCount = Number.parseInt((formData.get("evidenceFileCount") as string) || "0", 10)
-      for (let i = 0; i < fileCount; i++) {
+      const allowedTypes = new Set([
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "application/pdf",
+        "text/plain",
+      ])
+      const maxSizeBytes = 10 * 1024 * 1024 // 10MB per file
+
+      for (let i = 0; i < Math.min(fileCount, 20); i++) {
         const file = formData.get(`evidenceFile_${i}`) as File | null
         if (file && typeof (file as any).arrayBuffer === "function" && (file as any).size > 0) {
+          const type = (file as any).type || "application/octet-stream"
+          const size = (file as any).size || 0
+          if (!allowedTypes.has(type)) {
+            console.warn(`[upload] Rejected file type: ${type}`)
+            continue
+          }
+          if (size > maxSizeBytes) {
+            console.warn(`[upload] Rejected file too large: ${size}`)
+            continue
+          }
+
           const safeName = ((file as any).name || `evidence_${i}`).replace(/[^a-zA-Z0-9._-]/g, "_")
           const path = `${parsed.data.caseId}/${Date.now()}_${i}_${safeName}`
           const bytes = new Uint8Array(await file.arrayBuffer())
 
           let { error: uploadError } = await supabase.storage
             .from(bucketId)
-            .upload(path, bytes, { contentType: (file as any).type || "application/octet-stream" })
+            .upload(path, bytes, { contentType: type })
 
           if (uploadError && uploadError.message?.toLowerCase().includes("bucket")) {
             await supabase.storage.createBucket(bucketId, { public: false })
             ;({ error: uploadError } = await supabase.storage
               .from(bucketId)
-              .upload(path, bytes, { contentType: (file as any).type || "application/octet-stream" }))
+              .upload(path, bytes, { contentType: type }))
           }
 
           if (!uploadError) {
@@ -140,13 +161,9 @@ export async function POST(request: NextRequest) {
       console.error("[v0] Formspree submission failed:", formspreeError)
     }
 
-    return NextResponse.json({
-      success: true,
-      caseId: caseData.case_id,
-      message: "Case submitted successfully",
-    })
+    return ok({ caseId: caseData.case_id, message: "Case submitted successfully" })
   } catch (error) {
     console.error("[v0] Case submission error:", error)
-    return NextResponse.json({ success: false, error: "Failed to submit case" }, { status: 500 })
+    return serverError("Failed to submit case")
   }
 }
