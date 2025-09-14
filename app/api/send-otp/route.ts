@@ -1,18 +1,19 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { emailService } from "@/lib/email-service"
 import { z } from "zod"
 import { rateLimiter } from "@/lib/security/rate-limiter"
 import { createAdminClient } from "@/lib/supabase/admin"
 import bcrypt from "bcryptjs"
+import { badRequest, serverError, ok, tooManyRequests } from "@/lib/api/response"
 
 const SendOtpSchema = z.object({ email: z.string().email(), caseId: z.string().min(3) })
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json()
     const parsed = SendOtpSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 })
+      return badRequest("Invalid input")
     }
 
     const { email, caseId } = parsed.data
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     const id = `${ip}:${email}`
     const allowed = rateLimiter.isAllowed(id, { windowMs: 60_000, maxRequests: 3 })
     if (!allowed) {
-      return NextResponse.json({ error: "Too many requests. Please wait a minute before retrying." }, { status: 429 })
+      return tooManyRequests("Too many requests. Please wait a minute before retrying.")
     }
 
     // Generate & store hashed OTP (10 min)
@@ -37,18 +38,19 @@ export async function POST(request: NextRequest) {
 
     if (upsertErr) {
       console.error("[v0] OTP upsert error:", upsertErr)
-      return NextResponse.json({ error: "Failed to generate OTP" }, { status: 500 })
+      return serverError("Failed to generate OTP")
     }
 
     const result = await emailService.sendOTP(email, otp, caseId)
 
     if (result.success) {
-      return NextResponse.json({ success: true, message: "OTP sent successfully" })
+      return ok({ message: "OTP sent successfully" })
     } else {
-      return NextResponse.json({ error: "Failed to send OTP email" }, { status: 500 })
+      console.error("[v0] sendOTP failed", result.error)
+      return serverError("Failed to send OTP email")
     }
   } catch (error) {
     console.error("[v0] Send OTP API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return serverError("Internal server error")
   }
 }
