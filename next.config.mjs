@@ -19,4 +19,5 @@ const sentryWebpackPluginOptions = {
   silent: true,
 }
 
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+const useSentry = Boolean(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT)
+export default useSentry ? withSentryConfig(nextConfig, sentryWebpackPluginOptions) : nextConfig
