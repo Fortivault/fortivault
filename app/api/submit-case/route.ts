@@ -153,10 +153,45 @@ export async function POST(request: NextRequest) {
         forwardData.append("evidenceFileUrlsText", evidenceUrls.join("\n"))
       }
 
-      await fetch(formspreeEndpoint, {
+      // Ensure Formspree-friendly defaults so submissions appear clearly in the dashboard
+      if (parsed?.data?.contactEmail) {
+        forwardData.set("email", parsed.data.contactEmail)
+      }
+      if (parsed?.data?.description) {
+        forwardData.set("message", (parsed.data.description as string) || "")
+      }
+      forwardData.set("subject", `New Fraud Report ${parsed.data.caseId}`)
+      forwardData.set("form_type", "wizard_case_submission")
+
+      // Flatten arrays for readability in dashboard
+      try {
+        const tx = formData.get("transactionHashes") as string | null
+        if (tx) {
+          const arr = JSON.parse(tx) as string[]
+          if (Array.isArray(arr) && arr.length) {
+            forwardData.set("transactionHashesText", arr.join(", "))
+          }
+        }
+      } catch {}
+      try {
+        const br = formData.get("bankReferences") as string | null
+        if (br) {
+          const arr = JSON.parse(br) as string[]
+          if (Array.isArray(arr) && arr.length) {
+            forwardData.set("bankReferencesText", arr.join(", "))
+          }
+        }
+      } catch {}
+
+      const fsRes = await fetch(formspreeEndpoint, {
         method: "POST",
+        headers: { Accept: "application/json" },
         body: forwardData,
       })
+      if (!fsRes.ok) {
+        const text = await fsRes.text().catch(() => "")
+        console.error("[v0] Formspree non-OK response:", fsRes.status, text)
+      }
     } catch (formspreeError) {
       console.error("[v0] Formspree submission failed:", formspreeError)
     }
