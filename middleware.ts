@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server"
+import { NextResponse as EdgeNextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Lightweight edge-safe middleware: avoid importing server-only modules here to prevent
 // "Code generation from strings disallowed" and related runtime errors in the edge runtime.
 export function middleware(_request: NextRequest) {
-  return NextResponse.next()
+  return EdgeNextResponse.next()
 }
 
 export const config = {
