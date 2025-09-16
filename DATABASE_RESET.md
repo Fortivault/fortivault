@@ -31,6 +31,7 @@ Cleared all data from tables in proper order (respecting foreign key constraints
 Updated the remaining agent with clean data:
 - **ID**: `550e8400-e29b-41d4-a716-446655440001`
 - **Email**: `agent@fortivault.com`
+- **Password**: `fortivault01` (bcrypt hashed)
 - **Name**: `Recovery Specialist`
 - **Role**: `Senior Recovery Agent`
 - **Status**: `active`
@@ -51,11 +52,23 @@ Updated the remaining agent with clean data:
 - ✅ Data consistency verified
 - ✅ Ready for fresh application usage
 
+## Login Credentials
+
+### Agent Login (Ready to Use):
+- **Email**: `agent@fortivault.com`
+- **Password**: `fortivault01`
+- **Access**: Agent dashboard and case management
+
+### Admin Login (Needs Creation):
+- **Status**: No admin accounts exist
+- **Action**: Create personal admin account via `/admin/login` signup
+
 ## Next Steps for User:
 1. Start the Fortivault application (`pnpm run dev`)
-2. Navigate to admin login page (`/admin/login`)
-3. Create personal admin account through the registration flow
-4. Begin using the system with a clean database
+2. Test agent login with credentials above
+3. Navigate to admin login page (`/admin/login`)
+4. Create personal admin account through the registration flow
+5. Begin using the system with a clean database
 
 ## Technical Notes:
 - Database reset performed via direct PostgreSQL connection
