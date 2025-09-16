@@ -14,6 +14,7 @@ import { useAgentAuth } from "@/hooks/use-agent-auth"
 export const dynamic = "force-dynamic"
 
 export default function AgentLoginPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
