@@ -14,17 +14,23 @@ export function AgentProtectedRoute({ children }: AgentProtectedRouteProps) {
   const [isAuthed, setIsAuthed] = useState(false)
 
   useEffect(() => {
-    try {
-      const auth = typeof window !== "undefined" ? localStorage.getItem("agentAuth") : null
-      const ok = auth === "true"
-      setIsAuthed(ok)
-      setChecked(true)
-      if (!ok) {
+    let active = true
+    ;(async () => {
+      try {
+        const res = await fetch("/api/agent/me", { cache: "no-store" })
+        if (!active) return
+        const ok = res.ok
+        setIsAuthed(ok)
+        setChecked(true)
+        if (!ok) router.push("/agent/login")
+      } catch {
+        if (!active) return
+        setChecked(true)
         router.push("/agent/login")
       }
-    } catch {
-      setChecked(true)
-      router.push("/agent/login")
+    })()
+    return () => {
+      active = false
     }
   }, [router])
 

@@ -21,20 +21,26 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Check for existing agent session
-    const agentAuth = localStorage.getItem("agentAuth")
-    const agentData = localStorage.getItem("agentData")
-
-    if (agentAuth === "true" && agentData) {
+    let mounted = true
+    ;(async () => {
       try {
-        setAgent(JSON.parse(agentData))
-      } catch (error) {
-        // Clear invalid data
-        localStorage.removeItem("agentAuth")
-        localStorage.removeItem("agentData")
+        const res = await fetch("/api/agent/me", { cache: "no-store" })
+        if (!mounted) return
+        if (res.ok) {
+          const j = await res.json()
+          setAgent(j.agent)
+        } else {
+          setAgent(null)
+        }
+      } catch {
+        setAgent(null)
+      } finally {
+        if (mounted) setIsLoading(false)
       }
+    })()
+    return () => {
+      mounted = false
     }
-    setIsLoading(false)
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -50,8 +56,6 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const agentData = await response.json()
         setAgent(agentData.agent)
-        localStorage.setItem("agentAuth", "true")
-        localStorage.setItem("agentData", JSON.stringify(agentData.agent))
         return true
       }
     } catch (error) {
@@ -66,8 +70,6 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
       await fetch("/api/agent/logout", { method: "POST" })
     } catch {}
     setAgent(null)
-    localStorage.removeItem("agentAuth")
-    localStorage.removeItem("agentData")
     router.push("/agent/login")
   }
 

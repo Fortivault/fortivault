@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAgentAuth } from "@/hooks/use-agent-auth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -47,6 +48,7 @@ interface AgentCase {
 
 export default function AgentDashboard() {
   const [agentData, setAgentData] = useState<any>(null)
+  const { agent, logout } = useAgentAuth()
   const {
     cases,
     statistics,
@@ -63,24 +65,13 @@ export default function AgentDashboard() {
   const [showCommunicationHub, setShowCommunicationHub] = useState(false)
 
   useEffect(() => {
-    // Load agent data from localStorage
-    const storedAgentData = localStorage.getItem("agentData")
-    if (storedAgentData) {
-      const parsed = JSON.parse(storedAgentData)
-      const agentIdMap: { [key: string]: string } = {
-        "sarah.martinez@fortivault.com": "550e8400-e29b-41d4-a716-446655440001",
-        "mike.chen@fortivault.com": "550e8400-e29b-41d4-a716-446655440002",
-        "lisa.rodriguez@fortivault.com": "550e8400-e29b-41d4-a716-446655440003",
-      }
-      parsed.id = agentIdMap[parsed.email] || "550e8400-e29b-41d4-a716-446655440001"
-      setAgentData(parsed)
+    if (agent) {
+      setAgentData(agent)
     }
-  }, [])
+  }, [agent])
 
   const handleLogout = () => {
-    localStorage.removeItem("agentAuth")
-    localStorage.removeItem("agentData")
-    window.location.href = "/agent/login"
+    logout()
   }
 
   const getStatusColor = (status: string) => {
