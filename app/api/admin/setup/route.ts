@@ -10,6 +10,9 @@ const SetupSchema = z.object({
 
 export async function GET() {
   try {
+    if (process.env.ADMIN_FORCE_SETUP === "true") {
+      return NextResponse.json({ needsSetup: true })
+    }
     const supabase = createAdminClient()
     const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +14,7 @@ import { useAgentAuth } from "@/hooks/use-agent-auth"
 export const dynamic = "force-dynamic"
 
 export default function AgentLoginPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
@@ -29,7 +31,10 @@ export default function AgentLoginPage() {
 
     try {
       const success = await login(formData.email, formData.password)
-      if (!success) {
+      if (success) {
+        router.push("/agent")
+        return
+      } else {
         setError("Invalid agent credentials")
       }
     } catch (error) {
