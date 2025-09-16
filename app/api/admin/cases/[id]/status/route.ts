@@ -4,8 +4,9 @@ import { z } from "zod"
 
 const Schema = z.object({ status: z.string().min(1).max(64) })
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const ctx = await getAdminContext(request)
     if (!isAuthorizedAdmin(ctx)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -20,7 +21,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const { data, error } = await ctx.supabase
       .from("cases")
       .update({ status: parsed.data.status, updated_at: new Date().toISOString() })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 

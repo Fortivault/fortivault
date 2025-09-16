@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     // Issue victim_session cookie (optional path-limited)
     const victimToken = await signSession({ email, caseId, role: "victim" }, 60 * 60 * 24 * 7)
-    const res = NextResponse.json({ success: true })
+    const res = NextResponse.json({ success: true, email })
     res.cookies.set("victim_session", victimToken, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 })
 
     // Send a confirmation OTP to the user so they can verify their email and access the dashboard
