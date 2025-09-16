@@ -446,6 +446,39 @@ export interface Database {
           }
         ]
       }
+      email_otp: {
+        Row: {
+          id: string
+          email: string
+          case_id: string
+          code_hash: string
+          expires_at: string
+          attempts: number
+          consumed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          case_id: string
+          code_hash: string
+          expires_at: string
+          attempts?: number
+          consumed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          case_id?: string
+          code_hash?: string
+          expires_at?: string
+          attempts?: number
+          consumed_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {}
     Functions: {}

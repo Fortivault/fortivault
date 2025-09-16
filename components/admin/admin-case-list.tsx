@@ -15,6 +15,8 @@ interface AdminCase {
   lastUpdate: string
   contactEmail: string
   description: string
+  recordId: string
+  assignedAgentId: string | null
 }
 
 interface AdminCaseListProps {

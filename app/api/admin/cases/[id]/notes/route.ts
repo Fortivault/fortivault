@@ -4,8 +4,9 @@ import { z } from "zod"
 
 const Schema = z.object({ content: z.string().min(1), title: z.string().optional(), note_type: z.string().optional(), priority: z.string().optional() })
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const ctx = await getAdminContext(request)
     if (!isAuthorizedAdmin(ctx)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
 
-    const { data: caseRow, error: caseErr } = await ctx.supabase.from("cases").select("id, assigned_agent_id").eq("id", params.id).single()
+    const { data: caseRow, error: caseErr } = await ctx.supabase.from("cases").select("id, assigned_agent_id").eq("id", id).single()
     if (caseErr || !caseRow) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 })
     }

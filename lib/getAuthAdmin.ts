@@ -53,7 +53,7 @@ export async function getAuthAdmin(req: NextApiRequest): Promise<GetAuthAdminRes
     }
 
     return {
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email || null },
       admin: { id: (adminRow as any).id, email: (adminRow as any).email || user.email || null },
     }
   } catch (e) {
