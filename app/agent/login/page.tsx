@@ -31,7 +31,10 @@ export default function AgentLoginPage() {
 
     try {
       const success = await login(formData.email, formData.password)
-      if (!success) {
+      if (success) {
+        router.push("/agent")
+        return
+      } else {
         setError("Invalid agent credentials")
       }
     } catch (error) {
