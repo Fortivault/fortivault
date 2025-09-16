@@ -9,5 +9,6 @@ export function register() {
   return Sentry
 }
 
-// Export required router transition hook for Next.js instrumentation
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+// Optional export for Next.js router transition tracking; safely no-op if unsupported in current SDK
+// @ts-expect-error - captureRouterTransitionStart may not exist in some @sentry/nextjs versions
+export const onRouterTransitionStart = (Sentry as any).captureRouterTransitionStart?.bind(Sentry) ?? (() => {});
