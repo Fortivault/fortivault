@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+import { NextResponse } from "next/server"
+
 export function ok(data?: any) {
   return NextResponse.json(data || { success: true }, { status: 200 })
 }

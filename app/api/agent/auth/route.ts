@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { rateLimiter } from "@/lib/security/rate-limiter"
 import type { Agent, AgentPublic } from "@/types/entities"
@@ -57,10 +58,11 @@ export async function POST(request: Request) {
 
     const token = await signSession({ sub: agentData.id, role: "agent" })
     const res = NextResponse.json({ success: true, agent: agentData as AgentPublic })
+    const isProd = process.env.NODE_ENV === "production"
     res.cookies.set("agent_session", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     })
