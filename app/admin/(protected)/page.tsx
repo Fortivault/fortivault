@@ -49,7 +49,6 @@ export default function AdminPage() {
       .catch(() => {})
   }, [])
 
-  // Reload on realtime events
   useAdminRealtime(() => {
     loadCases(page)
   })
