@@ -30,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRealTimeCases } from "@/hooks/use-real-time-cases"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 interface AgentCase {
   id: string
@@ -63,6 +64,36 @@ export default function AgentDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [showCommunicationHub, setShowCommunicationHub] = useState(false)
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Initialize filters from URL
+  useEffect(() => {
+    const q = searchParams?.get("q") || ""
+    const status = searchParams?.get("status") || "all"
+    setSearchTerm(q)
+    setStatusFilter(status)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Persist filters to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams?.toString())
+    if (searchTerm) params.set("q", searchTerm)
+    else params.delete("q")
+    if (statusFilter && statusFilter !== "all") params.set("status", statusFilter)
+    else params.delete("status")
+    router.replace(`${pathname}?${params.toString()}`)
+  }, [searchTerm, statusFilter, router, pathname, searchParams])
+
+  // Debounce search term
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
+    return () => clearTimeout(t)
+  }, [searchTerm])
 
   useEffect(() => {
     if (agent) {
@@ -105,9 +136,10 @@ export default function AgentDashboard() {
   }
 
   const filteredCases = cases.filter((case_) => {
+    const q = debouncedSearch.toLowerCase()
     const matchesSearch =
-      case_.victim_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      case_.case_id.toLowerCase().includes(searchTerm.toLowerCase())
+      case_.victim_email.toLowerCase().includes(q) ||
+      case_.case_id.toLowerCase().includes(q)
     const matchesStatus = statusFilter === "all" || case_.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -317,6 +349,14 @@ export default function AgentDashboard() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* Cases List */}
                           <div className="space-y-4">
+                            {filteredCases.length === 0 && (
+                              <Card className="border-dashed">
+                                <CardContent className="p-8 text-center text-muted-foreground">
+                                  <p className="font-medium mb-1">No cases found</p>
+                                  <p className="text-sm">Try adjusting your search or filters.</p>
+                                </CardContent>
+                              </Card>
+                            )}
                             {filteredCases.map((case_) => (
                               <Card
                                 key={case_.id}
@@ -369,7 +409,7 @@ export default function AgentDashboard() {
                           </div>
 
                           {/* Case Details */}
-                          {selectedCase && (
+                          {selectedCase && filteredCases.length > 0 && (
                             <Card>
                               <CardHeader>
                                 <div className="flex items-center justify-between">
@@ -440,6 +480,14 @@ export default function AgentDashboard() {
                   </TabsContent>
 
                   <TabsContent value="communications" className="mt-6">
+                    {filteredCases.length === 0 ? (
+                      <Card className="border-dashed">
+                        <CardContent className="p-12 text-center text-muted-foreground">
+                          <p className="font-medium mb-1">No conversations to show</p>
+                          <p className="text-sm">Select an active case to start communicating.</p>
+                        </CardContent>
+                      </Card>
+                    ) : null}
                     <Card>
                       <CardHeader>
                         <CardTitle>Communication Hub</CardTitle>

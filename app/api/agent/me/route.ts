@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { verifySession } from "@/lib/security/session"
 
@@ -10,19 +9,19 @@ export async function GET(request: Request) {
     const payload = token ? await verifySession(token) : null
 
     if (!payload || !payload.sub || payload.role !== "agent") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "content-type": "application/json" } })
     }
 
     const supabase = createAdminClient()
     const { data: agent, error } = await supabase.from("agents").select("*").eq("id", payload.sub).single()
 
     if (error || !agent) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "content-type": "application/json" } })
     }
 
     const { password_hash, ...agentPublic } = agent as any
-    return NextResponse.json({ agent: agentPublic })
+    return new Response(JSON.stringify({ agent: agentPublic }), { status: 200, headers: { "content-type": "application/json" } })
   } catch (e) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    return new Response(JSON.stringify({ error: "Server error" }), { status: 500, headers: { "content-type": "application/json" } })
   }
 }
