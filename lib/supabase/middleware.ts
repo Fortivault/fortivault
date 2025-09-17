@@ -67,7 +67,7 @@ export async function updateSession(request: NextRequest) {
     "/login",
     "/signup",
     "/victim/complete-signup",
-    "/admin/login",
+    "/admin-login",
     "/agent/login",
   ]
   const isPublicRoute =
@@ -90,14 +90,14 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAdminRoute) {
-    const isLogin = request.nextUrl.pathname === "/admin/login"
+    const isLogin = request.nextUrl.pathname === "/admin-login"
     
     if (!isLogin) {
       // Check if user exists and has admin role
       const role = (user?.user_metadata as any)?.role
       if (!user || role !== "admin") {
         const url = request.nextUrl.clone()
-        url.pathname = "/admin/login"
+        url.pathname = "/admin-login"
         return NextResponse.redirect(url)
       }
 
@@ -121,14 +121,14 @@ export async function updateSession(request: NextRequest) {
           
           if (!adminByEmail) {
             const url = request.nextUrl.clone()
-            url.pathname = "/admin/login"
+            url.pathname = "/admin-login"
             return NextResponse.redirect(url)
           }
         }
       } catch (error) {
         console.error("Admin verification error:", error)
         const url = request.nextUrl.clone()
-        url.pathname = "/admin/login"
+        url.pathname = "/admin-login"
         return NextResponse.redirect(url)
       }
     }

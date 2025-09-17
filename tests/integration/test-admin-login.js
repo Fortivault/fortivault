@@ -4,7 +4,7 @@ const fetch = global.fetch || require('node-fetch')
   try {
     const email = process.env.TEST_ADMIN_EMAIL || 'admin@example.com'
     const password = process.env.TEST_ADMIN_PASS || 'password'
-    const res = await fetch(process.env.TEST_BASE_URL || 'http://localhost:10000/api/admin/login', {
+    const res = await fetch(process.env.TEST_BASE_URL || 'http://localhost:10000/api/admin-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),

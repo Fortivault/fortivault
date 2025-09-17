@@ -21,7 +21,7 @@ export async function requireAdminAuth(): Promise<AdminUser> {
   
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error("Missing Supabase environment variables")
-    redirect("/admin/login")
+    redirect("/admin-login")
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -42,13 +42,13 @@ export async function requireAdminAuth(): Promise<AdminUser> {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (userError || !user) {
-      redirect("/admin/login")
+      redirect("/admin-login")
     }
 
     // Check if user has admin role in metadata
     const userRole = user.user_metadata?.role
     if (userRole !== "admin") {
-      redirect("/admin/login")
+      redirect("/admin-login")
     }
 
     // Verify admin status in database
@@ -69,7 +69,7 @@ export async function requireAdminAuth(): Promise<AdminUser> {
         .single()
       
       if (emailError || !adminByEmail) {
-        redirect("/admin/login")
+        redirect("/admin-login")
       }
       
       return {
@@ -88,7 +88,7 @@ export async function requireAdminAuth(): Promise<AdminUser> {
     }
   } catch (error) {
     console.error("Error in requireAdminAuth:", error)
-    redirect("/admin/login")
+    redirect("/admin-login")
   }
 }
 

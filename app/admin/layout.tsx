@@ -81,7 +81,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const isAuthorized = await verifyAdminAccess()
   
   if (!isAuthorized) {
-    redirect("/admin/login")
+    redirect("/admin-login")
   }
 
   return (
