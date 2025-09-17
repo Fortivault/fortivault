@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { AdminCaseList } from "@/components/admin/admin-case-list"
 import { AdminStats } from "@/components/admin/admin-stats"
-import { AgentChatSystem } from "@/components/chat/agent-chat-system"
+import { RealTimeChatSystem } from "@/components/chat/real-time-chat-system"
 import { CaseDetailsPanel } from "@/components/admin/case-details"
 import { CaseManagementPanel } from "@/components/admin/case-management"
 import { Shield, Users, FileText } from "lucide-react"
