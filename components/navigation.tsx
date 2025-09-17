@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -31,9 +32,11 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
-          <img
+          <Image
             src="https://i.ibb.co/DPqX17SX/Adobe-Express-file-1.png"
             alt="Fortivault Logo"
+            width={32}
+            height={32}
             className="h-8 w-8 object-contain"
           />
           <span className="text-xl font-bold text-primary">Fortivault</span>

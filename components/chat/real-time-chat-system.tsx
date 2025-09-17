@@ -39,24 +39,26 @@ export function RealTimeChatSystem({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    const service = chatService.current
+    
     const initializeChat = async () => {
       try {
         // Create or get chat room
-        const room = await chatService.current.createOrGetChatRoom(caseId, userId)
+        const room = await service.createOrGetChatRoom(caseId, userId)
         setChatRoomId(room.id)
 
         // Load existing messages
-        const existingMessages = await chatService.current.getMessages(room.id)
+        const existingMessages = await service.getMessages(room.id)
         setMessages(existingMessages)
 
         // Subscribe to real-time updates
-        chatService.current.subscribeToMessages(
+        service.subscribeToMessages(
           room.id,
           (newMessage) => {
             setMessages((prev) => [...prev, newMessage])
             // Mark as read if not from current user
             if (newMessage.sender_id !== userId) {
-              chatService.current.markMessagesAsRead(room.id, userId)
+              service.markMessagesAsRead(room.id, userId)
             }
           },
           (typingData) => {
@@ -75,7 +77,7 @@ export function RealTimeChatSystem({
     initializeChat()
 
     return () => {
-      chatService.current.unsubscribe()
+      service?.unsubscribe()
     }
   }, [caseId, userId, userName])
 

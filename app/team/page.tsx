@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
@@ -43,9 +44,11 @@ export default function TeamPage() {
           {teamMembers.map((member, index) => (
             <Card key={index} className="text-center">
               <CardContent className="p-6">
-                <img
+                <Image
                   src={member.image || "/placeholder.svg"}
                   alt={member.name}
+                  width={128}
+                  height={128}
                   className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
                 />
                 <h3 className="text-xl font-semibold mb-2">{member.name}</h3>
