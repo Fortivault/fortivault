@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { verifySession } from "@/lib/security/session"
 
 export async function GET(request: Request) {
