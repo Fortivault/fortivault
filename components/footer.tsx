@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Mail, Phone, MapPin } from "lucide-react"
 
 export function Footer() {
@@ -48,9 +49,11 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <img
+              <Image
                 src="https://i.ibb.co/DPqX17SX/Adobe-Express-file-1.png"
                 alt="Fortivault Logo"
+                width={32}
+                height={32}
                 className="h-8 w-8 object-contain"
               />
               <span className="text-xl font-bold text-primary">Fortivault</span>
