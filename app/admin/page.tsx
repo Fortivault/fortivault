@@ -39,6 +39,11 @@ export default function AdminPage() {
   const [pageSize] = useState(10)
   const [total, setTotal] = useState(0)
   const [csrfToken, setCsrfToken] = useState<string>("")
+  const [adminId, setAdminId] = useState<string>("")
+  const [adminName, setAdminName] = useState<string>("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [priorityFilter, setPriorityFilter] = useState<string>("all")
+  const [search, setSearch] = useState<string>("")
   const supabase = createClient()
 
   const loadCases = useCallback(async (targetPage: number) => {
