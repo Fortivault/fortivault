@@ -2,9 +2,38 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { verifySession, signSession } from "@/lib/security/session"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { badRequest, serverError, ok } from "@/lib/api/response"
+import { badRequest, serverError, ok, tooManyRequests } from "@/lib/api/response"
+import { rateLimiter } from "@/lib/security/rate-limiter"
 
-const Schema = z.object({ token: z.string().min(10), caseId: z.string().min(3), password: z.string().min(8) })
+const CASE_ID_REGEX = /^CSRU-[A-Z0-9]{9}$/
+const PasswordSchema = z
+  .string()
+  .min(8)
+  .max(72)
+  .regex(/[a-z]/, "lowercase")
+  .regex(/[A-Z]/, "uppercase")
+  .regex(/\d/, "number")
+  .regex(/[^A-Za-z0-9]/, "special")
+
+const Schema = z.object({
+  token: z.string().min(10),
+  caseId: z.string().regex(CASE_ID_REGEX),
+  password: PasswordSchema,
+})
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const token = searchParams.get("token") || ""
+    if (!token) return badRequest("Missing token")
+    const payload = await verifySession(token)
+    if (!payload || payload.type !== "victim_signup") return badRequest("Invalid or expired link")
+    return ok({ valid: true, email: payload.email, caseId: payload.caseId })
+  } catch (e) {
+    console.error("[v0] victim complete-signup validate error:", e)
+    return serverError("Internal server error")
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -24,8 +53,16 @@ export async function POST(request: Request) {
 
     const email = payload.email as string
 
+    // Rate limit by IP+email
+    const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown"
+    const id = `${ip}:${email}:complete-signup`
+    const allowed = rateLimiter.isAllowed(id, { windowMs: 30_000, maxRequests: 5 })
+    if (!allowed) {
+      return tooManyRequests("Too many attempts. Please wait and try again.")
+    }
+
     const supabase = createAdminClient()
-    const { data: userRes, error } = await supabase.auth.admin.createUser({
+    const { error } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -33,34 +70,22 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      return badRequest(error.message || "Account creation failed")
+      const msg = error.message || "Account creation failed"
+      if (/already\s+registered/i.test(msg)) {
+        return badRequest("Email already registered. Try signing in instead.")
+      }
+      return badRequest(msg)
     }
 
-    // Issue victim_session cookie (optional path-limited)
     const victimToken = await signSession({ email, caseId, role: "victim" }, 60 * 60 * 24 * 7)
     const res = NextResponse.json({ success: true, email })
-    res.cookies.set("victim_session", victimToken, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 })
-
-    // Send a confirmation OTP to the user so they can verify their email and access the dashboard
-    try {
-      // Generate OTP and store hashed
-      const bcrypt = (await import('bcryptjs')).default
-      const otp = Math.floor(100000 + Math.random() * 900000).toString()
-      const code_hash = await bcrypt.hash(otp, 10)
-      const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString()
-
-      const { error: upsertErr } = await supabase
-        .from('email_otp')
-        .upsert({ email, case_id: caseId, code_hash, expires_at, attempts: 0, consumed_at: null }, { onConflict: 'email,case_id' })
-
-      if (upsertErr) console.error('[v0] OTP upsert error after signup:', upsertErr)
-
-      // Send OTP email using emailService
-      const { emailService } = await import('@/lib/email-service')
-      await emailService.sendOTP(email, otp, caseId)
-    } catch (e) {
-      console.error('[v0] Failed to send post-signup OTP:', e)
-    }
+    res.cookies.set("victim_session", victimToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === "production",
+    })
 
     return res
   } catch (e) {
