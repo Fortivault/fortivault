@@ -600,3 +600,30 @@ Require stack:
   page: '/'
 }
  GET / 500 in 262ms
+ ⨯ Error: Cannot find module './4447.js'
+Require stack:
+- /workspace/project/fortivault/.next/server/webpack-runtime.js
+- /workspace/project/fortivault/.next/server/pages/_document.js
+- /workspace/project/fortivault/node_modules/next/dist/server/require.js
+- /workspace/project/fortivault/node_modules/next/dist/server/load-components.js
+- /workspace/project/fortivault/node_modules/next/dist/build/utils.js
+- /workspace/project/fortivault/node_modules/next/dist/build/swc/options.js
+- /workspace/project/fortivault/node_modules/next/dist/build/swc/index.js
+- /workspace/project/fortivault/node_modules/next/dist/build/analysis/parse-module.js
+- /workspace/project/fortivault/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /workspace/project/fortivault/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /workspace/project/fortivault/node_modules/next/dist/server/lib/router-server.js
+- /workspace/project/fortivault/node_modules/next/dist/server/lib/start-server.js
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:206:28)
+    at <unknown> (.next/server/webpack-runtime.js:114:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:113:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:165:22)
+    at <unknown> (.next/server/app/page.js:1:18993)
+    at Object.<anonymous> (.next/server/app/page.js:1:19070) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ GET / 500 in 252ms
