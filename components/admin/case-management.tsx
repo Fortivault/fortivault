@@ -24,9 +24,9 @@ export function CaseManagementPanel({ selectedCase, onUpdateStatus, onAddNote }:
   const [isAddingNote, setIsAddingNote] = useState(false)
 
   const statusOptions = [
-    { value: "pending", label: "Pending", icon: Clock, color: "outline" },
-    { value: "in-progress", label: "In Progress", icon: AlertCircle, color: "secondary" },
-    { value: "resolved", label: "Resolved", icon: CheckCircle, color: "default" },
+    { value: "intake", label: "Intake", icon: Clock, color: "outline" },
+    { value: "under-review", label: "Under Review", icon: AlertCircle, color: "secondary" },
+    { value: "action-recommended", label: "Action Recommended", icon: CheckCircle, color: "default" },
     { value: "closed", label: "Closed", icon: CheckCircle, color: "destructive" },
   ]
 
