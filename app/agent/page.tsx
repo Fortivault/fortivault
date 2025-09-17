@@ -64,6 +64,7 @@ export default function AgentDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [showCommunicationHub, setShowCommunicationHub] = useState(false)
+  const [debouncedSearch, setDebouncedSearch] = useState("")
 
   const router = useRouter()
   const pathname = usePathname()
@@ -89,11 +90,8 @@ export default function AgentDashboard() {
   }, [searchTerm, statusFilter, router, pathname, searchParams])
 
   // Debounce search term
-  const debouncedSearch = useMemo(() => searchTerm, [searchTerm])
   useEffect(() => {
-    const t = setTimeout(() => {
-      // no-op, debounced via URL sync above
-    }, 250)
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
     return () => clearTimeout(t)
   }, [searchTerm])
 
