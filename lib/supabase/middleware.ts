@@ -91,11 +91,46 @@ export async function updateSession(request: NextRequest) {
 
   if (isAdminRoute) {
     const isLogin = request.nextUrl.pathname === "/admin/login"
-    const role = (user?.user_metadata as any)?.role
-    if (!isLogin && role !== "admin") {
-      const url = request.nextUrl.clone()
-      url.pathname = "/admin/login"
-      return NextResponse.redirect(url)
+    
+    if (!isLogin) {
+      // Check if user exists and has admin role
+      const role = (user?.user_metadata as any)?.role
+      if (!user || role !== "admin") {
+        const url = request.nextUrl.clone()
+        url.pathname = "/admin/login"
+        return NextResponse.redirect(url)
+      }
+
+      // Additional security: Verify admin status in database
+      try {
+        const { data: adminUser } = await supabase
+          .from("admin_users")
+          .select("id, status")
+          .eq("id", user.id)
+          .eq("status", "active")
+          .single()
+
+        if (!adminUser) {
+          // Fallback check by email
+          const { data: adminByEmail } = await supabase
+            .from("admin_users")
+            .select("id, status")
+            .eq("email", user.email)
+            .eq("status", "active")
+            .single()
+          
+          if (!adminByEmail) {
+            const url = request.nextUrl.clone()
+            url.pathname = "/admin/login"
+            return NextResponse.redirect(url)
+          }
+        }
+      } catch (error) {
+        console.error("Admin verification error:", error)
+        const url = request.nextUrl.clone()
+        url.pathname = "/admin/login"
+        return NextResponse.redirect(url)
+      }
     }
   }
 
