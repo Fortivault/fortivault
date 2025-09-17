@@ -242,7 +242,17 @@ export default function AdminPage() {
                     </TabsContent>
 
                     <TabsContent value="chat" className="mt-6">
-                      <AgentChatSystem caseId={selectedCase.id} victimName={selectedCase.contactEmail} />
+                      {adminId && (
+                        <RealTimeChatSystem
+                          caseId={selectedCase.id}
+                          userType="agent"
+                          userId={adminId}
+                          userName={adminName}
+                          victimEmail={selectedCase.contactEmail}
+                          otherPartyName={selectedCase.contactEmail}
+                          isOtherPartyOnline={false}
+                        />
+                      )}
                     </TabsContent>
                   </Tabs>
                 </CardContent>
