@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getAdminContext, isAuthorizedAdmin } from "@/lib/supabase/admin-auth"
+import { withRateLimit, ADMIN_RATE_LIMITS } from "@/lib/security/rate-limiter"
+import { withCSRFProtection } from "@/lib/security/csrf"
 import { z } from "zod"
 
 const Schema = z.object({ status: z.string().min(1).max(64) })
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const ctx = await getAdminContext(request)
@@ -34,3 +36,5 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Failed to update status" }, { status: 500 })
   }
 }
+
+export const PATCH = withRateLimit(ADMIN_RATE_LIMITS.SENSITIVE)(withCSRFProtection(handler))

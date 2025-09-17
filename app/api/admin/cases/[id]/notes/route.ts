@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getAdminContext, isAuthorizedAdmin } from "@/lib/supabase/admin-auth"
+import { withRateLimit, ADMIN_RATE_LIMITS } from "@/lib/security/rate-limiter"
+import { withCSRFProtection } from "@/lib/security/csrf"
 import { z } from "zod"
 
 const Schema = z.object({ content: z.string().min(1), title: z.string().optional(), note_type: z.string().optional(), priority: z.string().optional() })
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const ctx = await getAdminContext(request)
@@ -50,3 +52,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Failed to add note" }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(ADMIN_RATE_LIMITS.SENSITIVE)(withCSRFProtection(handler))

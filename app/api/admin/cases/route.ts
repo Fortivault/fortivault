@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getAdminContext, isAuthorizedAdmin } from "@/lib/supabase/admin-auth"
+import { withRateLimit, ADMIN_RATE_LIMITS } from "@/lib/security/rate-limiter"
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const ctx = await getAdminContext(request)
     if (!isAuthorizedAdmin(ctx)) {
@@ -21,3 +22,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to load cases" }, { status: 500 })
   }
 }
+
+export const GET = withRateLimit(ADMIN_RATE_LIMITS.API)(handler)
