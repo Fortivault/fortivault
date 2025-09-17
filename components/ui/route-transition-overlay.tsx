@@ -26,7 +26,7 @@ export function RouteTransitionOverlay() {
     return () => {
       if (deactivateTimer.current) window.clearTimeout(deactivateTimer.current)
     }
-  }, [pathname])
+  }, [pathname, active])
 
   // Capture clicks on internal links/buttons and show overlay immediately
   useEffect(() => {

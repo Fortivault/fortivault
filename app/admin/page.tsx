@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,29 +41,7 @@ export default function AdminPage() {
   const [csrfToken, setCsrfToken] = useState<string>("")
   const supabase = createClient()
 
-  useEffect(() => {
-    loadCases(1)
-    fetch("/api/csrf")
-      .then((r) => r.json())
-      .then((j) => setCsrfToken(j.token))
-      .catch(() => {})
-  }, [])
-
-  // Reload on realtime events
-  useAdminRealtime(() => {
-    loadCases(page)
-  })
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut()
-      await fetch("/api/admin/logout", { method: "POST" })
-    } finally {
-      window.location.href = "/admin-login"
-    }
-  }
-
-  const loadCases = async (targetPage: number) => {
+  const loadCases = useCallback(async (targetPage: number) => {
     setIsLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -114,6 +92,28 @@ export default function AdminPage() {
       setSelectedCase(null)
     } finally {
       setIsLoading(false)
+    }
+  }, [supabase, pageSize])
+
+  useEffect(() => {
+    loadCases(1)
+    fetch("/api/csrf")
+      .then((r) => r.json())
+      .then((j) => setCsrfToken(j.token))
+      .catch(() => {})
+  }, [loadCases])
+
+  // Reload on realtime events
+  useAdminRealtime(() => {
+    loadCases(page)
+  })
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      await fetch("/api/admin/logout", { method: "POST" })
+    } finally {
+      window.location.href = "/admin-login"
     }
   }
 
