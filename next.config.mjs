@@ -12,7 +12,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  allowedDevOrigins: ["*.fly.dev", "upright-understanding.net", "*.upright-understanding.net"],
+  allowedDevOrigins: ["*.fly.dev", "upright-understanding.net", "*.upright-understanding.net", "*.prod-runtime.all-hands.dev"],
 }
 
 const sentryWebpackPluginOptions = {
