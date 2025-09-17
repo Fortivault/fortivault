@@ -106,7 +106,14 @@ export default function AdminPage() {
       .then((r) => r.json())
       .then((j) => setCsrfToken(j.token))
       .catch(() => {})
-  }, [loadCases])
+    ;(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setAdminId(user.id)
+        setAdminName(user.user_metadata?.name || user.email || "Admin")
+      }
+    })()
+  }, [loadCases, supabase])
 
   // Reload on realtime events
   useAdminRealtime(() => {
