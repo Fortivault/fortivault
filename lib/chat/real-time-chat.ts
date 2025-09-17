@@ -80,20 +80,33 @@ export class RealTimeChatService {
     return data
   }
 
-  async createOrGetChatRoom(caseId: string, victimEmail: string) {
-    // First try to get existing chat room
-    const { data: existingRoom } = await this.supabase.from("chat_rooms").select("*").eq("case_id", caseId).single()
+  async createOrGetChatRoom(casePublicId: string, victimEmail: string) {
+    // Resolve internal case UUID by public case_id
+    const { data: caseRow, error: caseErr } = await this.supabase
+      .from("cases")
+      .select("id, victim_email")
+      .eq("case_id", casePublicId)
+      .single()
+
+    if (caseErr || !caseRow) throw caseErr || new Error("Case not found")
+
+    // Try to get existing chat room by internal case UUID
+    const { data: existingRoom } = await this.supabase
+      .from("chat_rooms")
+      .select("*")
+      .eq("case_id", caseRow.id)
+      .single()
 
     if (existingRoom) {
       return existingRoom
     }
 
-    // Create new chat room
+    // Create new chat room (prefer victim email from case if present)
     const { data, error } = await this.supabase
       .from("chat_rooms")
       .insert({
-        case_id: caseId,
-        victim_email: victimEmail,
+        case_id: caseRow.id,
+        victim_email: caseRow.victim_email || victimEmail,
         assigned_agent_id: null,
       })
       .select()
