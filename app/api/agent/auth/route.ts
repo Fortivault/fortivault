@@ -58,11 +58,10 @@ export async function POST(request: Request) {
 
     const token = await signSession({ sub: agentData.id, role: "agent" })
     const res = NextResponse.json({ success: true, agent: agentData as AgentPublic })
-    const isProd = process.env.NODE_ENV === "production"
     res.cookies.set("agent_session", token, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "none" : "lax",
+      secure: true,
+      sameSite: "none",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     })
