@@ -16,6 +16,7 @@ interface RealTimeChatSystemProps {
   userType: "victim" | "agent"
   userId: string
   userName: string
+  victimEmail: string
   otherPartyName?: string
   isOtherPartyOnline?: boolean
 }
@@ -25,6 +26,7 @@ export function RealTimeChatSystem({
   userType,
   userId,
   userName,
+  victimEmail,
   otherPartyName = "Support Agent",
   isOtherPartyOnline = false,
 }: RealTimeChatSystemProps) {
@@ -43,8 +45,8 @@ export function RealTimeChatSystem({
     
     const initializeChat = async () => {
       try {
-        // Create or get chat room
-        const room = await service.createOrGetChatRoom(caseId, userId)
+        // Create or get chat room using victim email bound to the case
+        const room = await service.createOrGetChatRoom(caseId, victimEmail)
         setChatRoomId(room.id)
 
         // Load existing messages

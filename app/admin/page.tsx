@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { AdminCaseList } from "@/components/admin/admin-case-list"
 import { AdminStats } from "@/components/admin/admin-stats"
-import { AgentChatSystem } from "@/components/chat/agent-chat-system"
+import { RealTimeChatSystem } from "@/components/chat/real-time-chat-system"
 import { CaseDetailsPanel } from "@/components/admin/case-details"
 import { CaseManagementPanel } from "@/components/admin/case-management"
 import { Shield, Users, FileText } from "lucide-react"
@@ -39,6 +40,11 @@ export default function AdminPage() {
   const [pageSize] = useState(10)
   const [total, setTotal] = useState(0)
   const [csrfToken, setCsrfToken] = useState<string>("")
+  const [adminId, setAdminId] = useState<string>("")
+  const [adminName, setAdminName] = useState<string>("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [priorityFilter, setPriorityFilter] = useState<string>("all")
+  const [search, setSearch] = useState<string>("")
   const supabase = createClient()
 
   const loadCases = useCallback(async (targetPage: number) => {
@@ -101,7 +107,14 @@ export default function AdminPage() {
       .then((r) => r.json())
       .then((j) => setCsrfToken(j.token))
       .catch(() => {})
-  }, [loadCases])
+    ;(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setAdminId(user.id)
+        setAdminName(user.user_metadata?.name || user.email || "Admin")
+      }
+    })()
+  }, [loadCases, supabase])
 
   // Reload on realtime events
   useAdminRealtime(() => {
@@ -186,9 +199,103 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
             <AdminStats cases={cases} />
+
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Admin Tools</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 gap-2">
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="intake">Intake</SelectItem>
+                      <SelectItem value="under-review">Under Review</SelectItem>
+                      <SelectItem value="action-recommended">Action Recommended</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priorities</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    placeholder="Search case ID or email"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+
+                  <Button variant="outline" onClick={async () => {
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession()
+                      const token = session?.access_token
+                      let all: any[] = []
+                      let p = 1
+                      const size = 100
+                      while (true) {
+                        const res = await fetch(`/api/admin/cases?page=${p}&pageSize=${size}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
+                        const j = await res.json()
+                        const arr = j.cases || []
+                        all = all.concat(arr)
+                        if (!arr.length || arr.length < size) break
+                        p++
+                      }
+                      const headers = ["case_id","victim_email","scam_type","amount","currency","status","priority","created_at","updated_at","assigned_agent_id"]
+                      const csv = [headers.join(",")].concat(all.map((c:any) => headers.map(h => JSON.stringify(c[h] ?? "")).join(","))).join("\n")
+                      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement("a")
+                      a.href = url
+                      a.download = `cases_export_${Date.now()}.csv`
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                      URL.revokeObjectURL(url)
+                    } catch (e) {
+                      console.error(e)
+                      window.alert("Failed to export cases")
+                    }
+                  }}>Export Cases (CSV)</Button>
+
+                  <Button variant="destructive" onClick={async () => {
+                    if (!csrfToken) { window.alert("Missing CSRF token"); return }
+                    const confirmText = window.prompt("Type RESET to wipe all cases, messages, chat rooms, notes and victim profiles tied to cases. This cannot be undone.")
+                    if (confirmText !== "RESET") return
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession()
+                      const token = session?.access_token
+                      const res = await fetch("/api/admin/reset", { method: "POST", headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ confirm: "RESET" }) })
+                      const j = await res.json().catch(() => ({}))
+                      if (!res.ok) {
+                        window.alert(j?.error || j?.message || "Reset failed")
+                        return
+                      }
+                      window.alert("Database reset complete")
+                      await loadCases(1)
+                    } catch (e) {
+                      console.error(e)
+                      window.alert("Reset failed")
+                    }
+                  }}>Reset Database</Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="mt-6">
               <AdminCaseList
-                cases={cases}
+                cases={cases.filter(c => (statusFilter === "all" || c.status === statusFilter) && (priorityFilter === "all" || c.priority === priorityFilter) && ((c.id + " " + c.contactEmail).toLowerCase().includes(search.toLowerCase())))}
                 selectedCase={selectedCase}
                 onSelectCase={(caseItem) => setSelectedCase(caseItem)}
                 onUpdateStatus={updateCaseStatus}
@@ -230,7 +337,17 @@ export default function AdminPage() {
                     </TabsContent>
 
                     <TabsContent value="chat" className="mt-6">
-                      <AgentChatSystem caseId={selectedCase.id} victimName={selectedCase.contactEmail} />
+                      {adminId && (
+                        <RealTimeChatSystem
+                          caseId={selectedCase.id}
+                          userType="agent"
+                          userId={adminId}
+                          userName={adminName}
+                          victimEmail={selectedCase.contactEmail}
+                          otherPartyName={selectedCase.contactEmail}
+                          isOtherPartyOnline={false}
+                        />
+                      )}
                     </TabsContent>
                   </Tabs>
                 </CardContent>
