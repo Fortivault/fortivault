@@ -11,14 +11,14 @@
 ```bash
 curl -I http://localhost:12000/admin
 ```
-**Result:** `HTTP/1.1 307 Temporary Redirect` → `/admin/login`  
+**Result:** `HTTP/1.1 307 Temporary Redirect` → `/admin-login`  
 **Status:** ✅ PASS - Unauthenticated users are redirected to login
 
 ### 2. Admin API Protection ✅
 ```bash
 curl -I http://localhost:12000/api/admin/cases
 ```
-**Result:** `HTTP/1.1 307 Temporary Redirect` → `/admin/login`  
+**Result:** `HTTP/1.1 307 Temporary Redirect` → `/admin-login`  
 **Status:** ✅ PASS - API endpoints are protected and redirect to login
 
 ### 3. CSRF Token Endpoint ✅
@@ -39,7 +39,7 @@ x-ratelimit-reset: 1758068746009
 
 ### 5. Browser Redirect Test ✅
 **Test:** Navigate to `/admin` in browser  
-**Result:** Automatically redirected to `/admin/login`  
+**Result:** Automatically redirected to `/admin-login`  
 **Status:** ✅ PASS - Client-side security working
 
 ## Security Implementation Verified
@@ -69,7 +69,7 @@ x-ratelimit-reset: 1758068746009
 
 ## Security Flow Verification
 
-1. **Unauthenticated Access Attempt** → `307 Redirect to /admin/login`
+1. **Unauthenticated Access Attempt** → `307 Redirect to /admin-login`
 2. **API Access Without Auth** → `401 Unauthorized` 
 3. **Rate Limiting** → Headers show active monitoring
 4. **CSRF Protection** → Endpoint available but requires auth

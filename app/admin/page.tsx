@@ -59,7 +59,7 @@ export default function AdminPage() {
       await supabase.auth.signOut()
       await fetch("/api/admin/logout", { method: "POST" })
     } finally {
-      window.location.href = "/admin/login"
+      window.location.href = "/admin-login"
     }
   }
 
