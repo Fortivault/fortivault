@@ -122,21 +122,21 @@ export function CaseManagementPanel({ selectedCase, onUpdateStatus, onAddNote }:
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => handleStatusUpdate("in-progress")}
-              disabled={selectedCase.status === "in-progress" || isUpdatingStatus}
+              onClick={() => handleStatusUpdate("under-review")}
+              disabled={selectedCase.status === "under-review" || isUpdatingStatus}
             >
-              Start Investigation
+              Start Review
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => handleStatusUpdate("resolved")}
-              disabled={selectedCase.status === "resolved" || isUpdatingStatus}
+              onClick={() => handleStatusUpdate("action-recommended")}
+              disabled={selectedCase.status === "action-recommended" || isUpdatingStatus}
             >
-              Mark Resolved
+              Recommend Action
             </Button>
             <Button 
               variant="outline" 
@@ -146,13 +146,13 @@ export function CaseManagementPanel({ selectedCase, onUpdateStatus, onAddNote }:
             >
               Close Case
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => handleStatusUpdate("pending")}
-              disabled={selectedCase.status === "pending" || isUpdatingStatus}
+              onClick={() => handleStatusUpdate("intake")}
+              disabled={selectedCase.status === "intake" || isUpdatingStatus}
             >
-              Reset to Pending
+              Reset to Intake
             </Button>
           </div>
         </CardContent>
