@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     const result = await emailService.sendOTP(email, otp, caseId)
 
     if (result.success) {
-      return ok({ message: "OTP sent successfully" })
+      return ok({ success: true, message: "OTP sent successfully" })
     } else {
       console.error("[v0] sendOTP failed", result.error)
       return serverError("Failed to send OTP email")
