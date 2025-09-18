@@ -134,13 +134,13 @@ export function FraudReportingWizard() {
       case 0:
         return data.scamType !== ""
       case 1:
-        return data.amount && data.currency && data.timeline && data.description
+        return !!(data.amount && data.currency && data.timeline && data.description)
       case 2:
-        return data.scamType === "crypto" ? true : data.bankReferences.length > 0
+        return true // Transaction references are optional
       case 3:
-        return data.evidenceFiles.length > 0
+        return true // Evidence uploads are optional
       case 4:
-        return data.contactEmail !== ""
+        return /.+@.+\..+/.test(data.contactEmail)
       default:
         return false
     }
