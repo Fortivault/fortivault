@@ -56,6 +56,18 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const agentData = await response.json()
         setAgent(agentData.agent)
+        // Force a re-check of authentication status
+        setTimeout(async () => {
+          try {
+            const res = await fetch("/api/agent/me", { cache: "no-store" })
+            if (res.ok) {
+              const j = await res.json()
+              setAgent(j.agent)
+            }
+          } catch (error) {
+            console.error("Error refreshing agent data:", error)
+          }
+        }, 50)
         return true
       }
     } catch (error) {

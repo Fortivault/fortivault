@@ -140,23 +140,105 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Forward all non-file fields as-is
+      // Forward all non-file fields with proper formatting
       for (const [key, value] of formData.entries()) {
         if (key.startsWith("evidenceFile_")) continue
         if (value instanceof Blob) continue
         forwardData.append(key, value as string)
       }
 
+      // Add formatted fields for better Formspree display
+      const scamTypeLabels: Record<string, string> = {
+        crypto: "Cryptocurrency Fraud",
+        fiat: "Traditional Financial Fraud", 
+        other: "Other Fraud Types"
+      }
+      
+      forwardData.append("scamTypeFormatted", scamTypeLabels[formData.get("scamType") as string] || formData.get("scamType") as string)
+      
+      // Parse and format transaction hashes and bank references
+      try {
+        const transactionHashes = JSON.parse(formData.get("transactionHashes") as string || "[]")
+        const bankReferences = JSON.parse(formData.get("bankReferences") as string || "[]")
+        
+        if (transactionHashes.length > 0) {
+          forwardData.append("transactionHashesFormatted", transactionHashes.join("\n"))
+          forwardData.append("transactionHashesCount", transactionHashes.length.toString())
+        }
+        
+        if (bankReferences.length > 0) {
+          forwardData.append("bankReferencesFormatted", bankReferences.join("\n"))
+          forwardData.append("bankReferencesCount", bankReferences.length.toString())
+        }
+      } catch (error) {
+        console.error("Error parsing transaction data:", error)
+      }
+
       // Add evidence URLs instead of raw files
       if (evidenceUrls.length) {
         forwardData.append("evidenceFileUrls", JSON.stringify(evidenceUrls))
         forwardData.append("evidenceFileUrlsText", evidenceUrls.join("\n"))
+        forwardData.append("evidenceFileCount", evidenceUrls.length.toString())
       }
 
-      await fetch(formspreeEndpoint, {
+      // Add formatted submission info
+      forwardData.append("submissionSource", "Fortivault Fraud Reporting Wizard")
+      forwardData.append("caseStatus", "New Submission")
+      forwardData.append("platform", "Fortivault")
+      
+      // Format amount with currency
+      const amount = formData.get("amount") as string
+      const currency = formData.get("currency") as string
+      if (amount && currency) {
+        forwardData.append("amountFormatted", `${amount} ${currency}`)
+      }
+
+      // Add timeline formatting
+      const timeline = formData.get("timeline") as string
+      const timelineLabels: Record<string, string> = {
+        "today": "Today",
+        "yesterday": "Yesterday", 
+        "this-week": "This week",
+        "last-week": "Last week",
+        "this-month": "This month",
+        "1-3-months": "1-3 months ago",
+        "3-6-months": "3-6 months ago",
+        "6-months-plus": "More than 6 months ago"
+      }
+      if (timeline) {
+        forwardData.append("timelineFormatted", timelineLabels[timeline] || timeline)
+      }
+
+      // Add summary for easy reading
+      const description = formData.get("description") as string
+      const scamType = formData.get("scamType") as string
+      const contactEmail = formData.get("contactEmail") as string
+      
+      let summary = `New fraud case submitted by ${contactEmail}\n`
+      summary += `Case ID: ${parsed.data.caseId}\n`
+      summary += `Type: ${scamTypeLabels[scamType] || scamType}\n`
+      if (amount && currency) {
+        summary += `Amount: ${amount} ${currency}\n`
+      }
+      if (timeline) {
+        summary += `Timeline: ${timelineLabels[timeline] || timeline}\n`
+      }
+      summary += `Evidence Files: ${evidenceUrls.length} uploaded\n`
+      
+      forwardData.append("caseSummary", summary)
+
+      const formspreeResponse = await fetch(formspreeEndpoint, {
         method: "POST",
         body: forwardData,
       })
+
+      if (formspreeResponse.ok) {
+        console.log("[v0] Formspree submission successful for case:", parsed.data.caseId)
+      } else {
+        console.error("[v0] Formspree submission failed with status:", formspreeResponse.status)
+        const errorText = await formspreeResponse.text()
+        console.error("[v0] Formspree error response:", errorText)
+      }
     } catch (formspreeError) {
       console.error("[v0] Formspree submission failed:", formspreeError)
     }
