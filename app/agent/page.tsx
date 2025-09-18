@@ -48,6 +48,14 @@ interface AgentCase {
 }
 
 export default function AgentDashboard() {
+  return (
+    <AgentProtectedRoute>
+      <AgentDashboardContent />
+    </AgentProtectedRoute>
+  )
+}
+
+function AgentDashboardContent() {
   const [agentData, setAgentData] = useState<any>(null)
   const { agent, logout } = useAgentAuth()
   const {

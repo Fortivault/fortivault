@@ -9,10 +9,9 @@ export async function middleware(request: NextRequest) {
     return await updateSession(request)
   } catch (error) {
     // If there's an error with Supabase middleware (e.g., Edge Runtime compatibility),
-    // fall back to basic route protection
+    // fall back to secure route protection with proper verification
     console.warn("Supabase middleware error:", error)
     
-    // Basic route protection fallback
     const isAgentRoute = request.nextUrl.pathname.startsWith("/agent")
     const isAdminRoute = request.nextUrl.pathname.startsWith("/admin")
     const isAgentLogin = request.nextUrl.pathname === "/agent/login"
@@ -25,10 +24,27 @@ export async function middleware(request: NextRequest) {
         url.pathname = "/agent/login"
         return NextResponse.redirect(url)
       }
+      
+      // Verify agent session token
+      try {
+        const { verifySession } = await import("@/lib/security/session")
+        const payload = await verifySession(token)
+        if (!payload || payload.role !== "agent") {
+          const url = request.nextUrl.clone()
+          url.pathname = "/agent/login"
+          return NextResponse.redirect(url)
+        }
+      } catch (verifyError) {
+        console.warn("Agent session verification failed:", verifyError)
+        const url = request.nextUrl.clone()
+        url.pathname = "/agent/login"
+        return NextResponse.redirect(url)
+      }
     }
     
     if (isAdminRoute && !isAdminLogin) {
-      // For admin routes, redirect to login if no session
+      // For admin routes, always redirect to login in fallback mode
+      // Client-side verification will handle proper authentication
       const url = request.nextUrl.clone()
       url.pathname = "/admin-login"
       return NextResponse.redirect(url)
