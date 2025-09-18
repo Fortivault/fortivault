@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const result = await emailService.sendWelcomeEmail(email, caseId, link)
 
     if (result.success) {
-      return ok({ message: "Email verified successfully" })
+      return ok({ success: true, message: "Email verified successfully" })
     } else {
       console.error("[v0] sendWelcomeEmail failed", result.error)
       return serverError("Failed to send welcome email")
