@@ -81,7 +81,7 @@ export function RealTimeChatSystem({
     return () => {
       service?.unsubscribe()
     }
-  }, [caseId, userId, userName])
+  }, [caseId, userId, userName, victimEmail])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })

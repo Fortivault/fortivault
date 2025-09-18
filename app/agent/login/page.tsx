@@ -32,7 +32,11 @@ export default function AgentLoginPage() {
     try {
       const success = await login(formData.email, formData.password)
       if (success) {
-        router.push("/agent")
+        // Add a small delay to ensure authentication state is set
+        setTimeout(() => {
+          router.push("/agent")
+          router.refresh()
+        }, 100)
         return
       } else {
         setError("Invalid agent credentials")
