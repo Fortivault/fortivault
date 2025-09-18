@@ -34,8 +34,8 @@ export function SuccessStep({ caseId, userEmail }: SuccessStepProps) {
           }),
         })
 
-        const result = await response.json()
-        if (result.success) {
+        const result = await response.json().catch(() => ({}))
+        if (response.ok || result.success) {
           console.log("[v0] OTP sent successfully")
           setShowVerification(true)
           setCooldown(30)
@@ -77,9 +77,9 @@ export function SuccessStep({ caseId, userEmail }: SuccessStepProps) {
         }),
       })
 
-      const result = await response.json()
+      const result = await response.json().catch(() => ({}))
 
-      if (result.success) {
+      if (response.ok || result.success) {
         setIsVerifying(false)
         setIsVerified(true)
         setShowProgress(true)
@@ -263,8 +263,8 @@ export function SuccessStep({ caseId, userEmail }: SuccessStepProps) {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ email: userEmail, caseId }),
                           })
-                          const ok = await res.json()
-                          if (ok.success) setCooldown(30)
+                          const ok = await res.json().catch(() => ({}))
+                          if (res.ok || ok.success) setCooldown(30)
                         } catch (e) {
                           console.error("[v0] Resend OTP error:", e)
                         }

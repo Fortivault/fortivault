@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,7 @@ import { AdminStats } from "@/components/admin/admin-stats"
 import { RealTimeChatSystem } from "@/components/chat/real-time-chat-system"
 import { CaseDetailsPanel } from "@/components/admin/case-details"
 import { CaseManagementPanel } from "@/components/admin/case-management"
-import { Shield, Users, FileText, AlertTriangle } from "lucide-react"
+import { Shield, Users, FileText } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useAdminRealtime } from "@/hooks/useAdminRealtime"
 
@@ -34,11 +34,11 @@ interface AdminCase {
 }
 
 export default function AdminPage() {
-  const router = useRouter()
+
   const [cases, setCases] = useState<AdminCase[]>([])
   const [selectedCase, setSelectedCase] = useState<AdminCase | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isAuthenticating, setIsAuthenticating] = useState(true)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
@@ -51,62 +51,19 @@ export default function AdminPage() {
   const [search, setSearch] = useState<string>("")
   const supabase = createClient()
 
-  // Enhanced authentication check
+  // Auth is enforced server-side in layout; avoid client-side delays
   useEffect(() => {
-    const verifyAdminAccess = async () => {
+    (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) {
-          setAuthError("No active session")
-          router.push("/admin-login")
-          return
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setAdminId(user.id)
+          setAdminName(user.user_metadata?.name || user.email || "Admin")
         }
-
-        const user = session.user
-        const role = user.user_metadata?.role
-
-        if (role !== "admin") {
-          setAuthError("Insufficient permissions")
-          router.push("/admin-login")
-          return
-        }
-
-        // Verify admin status in database
-        const { data: adminUser, error } = await supabase
-          .from("admin_users")
-          .select("id, status, email")
-          .eq("id", user.id)
-          .eq("status", "active")
-          .single()
-
-        if (error || !adminUser) {
-          // Fallback check by email
-          const { data: adminByEmail, error: emailError } = await supabase
-            .from("admin_users")
-            .select("id, status, email")
-            .eq("email", user.email)
-            .eq("status", "active")
-            .single()
-          
-          if (emailError || !adminByEmail) {
-            setAuthError("Admin access not found")
-            router.push("/admin-login")
-            return
-          }
-        }
-
-        setAdminId(user.id)
-        setAdminName(user.user_metadata?.name || user.email || "Admin")
-        setIsAuthenticating(false)
-      } catch (error) {
-        console.error("Admin verification error:", error)
-        setAuthError("Authentication failed")
-        router.push("/admin-login")
-      }
-    }
-
-    verifyAdminAccess()
-  }, [supabase, router])
+      } catch {}
+      setIsAuthenticating(false)
+    })()
+  }, [supabase])
 
   const loadCases = useCallback(async (targetPage: number) => {
     setIsLoading(true)
@@ -235,38 +192,6 @@ export default function AdminPage() {
     await loadCases(page)
   }
 
-  // Show loading state during authentication
-  if (isAuthenticating) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <h2 className="text-xl font-semibold">Verifying Admin Access</h2>
-            <p className="text-muted-foreground">Please wait while we authenticate your credentials...</p>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // Show error state if authentication failed
-  if (authError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center space-y-4">
-            <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
-            <h2 className="text-xl font-semibold text-destructive">Access Denied</h2>
-            <p className="text-muted-foreground">{authError}</p>
-            <Button onClick={() => router.push("/admin-login")} className="w-full">
-              Return to Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-background">

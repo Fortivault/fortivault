@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
       console.error("[v0] Formspree submission failed:", formspreeError)
     }
 
-    return ok({ caseId: caseData.case_id, message: "Case submitted successfully" })
+    return ok({ success: true, caseId: caseData.case_id, message: "Case submitted successfully" })
   } catch (error) {
     console.error("[v0] Case submission error:", error)
     return serverError("Failed to submit case")
