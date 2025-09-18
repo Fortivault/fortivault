@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { AgentProtectedRoute } from "@/components/auth/agent-protected-route"
+
 import { AgentVictimCommunicationHub } from "@/components/chat/agent-victim-communication-hub"
 import { AgentAnalyticsDashboard } from "@/components/analytics/agent-analytics-dashboard"
 import {
@@ -49,9 +49,7 @@ interface AgentCase {
 
 export default function AgentDashboard() {
   return (
-    <AgentProtectedRoute>
-      <AgentDashboardContent />
-    </AgentProtectedRoute>
+    <AgentDashboardContent />
   )
 }
 
@@ -166,7 +164,6 @@ function AgentDashboardContent() {
   }
 
   return (
-    <AgentProtectedRoute>
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="border-b bg-card">
@@ -623,6 +620,5 @@ function AgentDashboardContent() {
           )}
         </div>
       </div>
-    </AgentProtectedRoute>
   )
 }
