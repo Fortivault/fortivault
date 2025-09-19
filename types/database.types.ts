@@ -52,6 +52,7 @@ export interface Database {
           last_seen: string | null
           created_at: string
           updated_at: string | null
+          referral_code: string | null
         }
         Insert: {
           id?: string
@@ -65,6 +66,7 @@ export interface Database {
           last_seen?: string | null
           created_at?: string
           updated_at?: string | null
+          referral_code?: string | null
         }
         Update: {
           id?: string
@@ -78,6 +80,7 @@ export interface Database {
           last_seen?: string | null
           created_at?: string
           updated_at?: string | null
+          referral_code?: string | null
         }
         Relationships: []
       }

@@ -43,5 +43,15 @@ CREATE TABLE IF NOT EXISTS recovery_results (
   created_at timestamptz DEFAULT now()
 );
 
--- Add foreign key for agent_id
 ALTER TABLE recovery_results ADD CONSTRAINT fk_agent_id FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE;
+
+-- Add referral_code to agents table if not exists
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name='agents' AND column_name='referral_code'
+  ) THEN
+    ALTER TABLE agents ADD COLUMN referral_code text;
+  END IF;
+END $$;
