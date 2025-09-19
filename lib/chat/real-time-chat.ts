@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client"
 import type { RealtimeChannel } from "@supabase/supabase-js"
-import type { Message as DBMessage, ChatRoom as DBChatRoom } from "@/types/entities"
+import type { Message as DBMessage, ChatRoom as DBChatRoom } from "../../types/entities"
 
 export type ChatMessage = DBMessage
 export type ChatRoom = DBChatRoom
