@@ -1,14 +1,13 @@
-import { test, expect, request } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
-test('Rate limiting on agent login', async ({ baseURL }) => {
-  const ctx = await request.newContext()
+test('Rate limiting on agent login', async ({ request }) => {
   for (let i = 0; i < 6; i++) {
-    await ctx.post(`${baseURL}/api/agent/auth`, {
+    await request.post('/api/agent/auth', {
       headers: { 'Content-Type': 'application/json' },
       data: { email: 'agent@example.com', password: 'wrongpass' },
     })
   }
-  const res = await ctx.post(`${baseURL}/api/agent/auth`, {
+  const res = await request.post('/api/agent/auth', {
     headers: { 'Content-Type': 'application/json' },
     data: { email: 'agent@example.com', password: 'wrongpass' },
   })
