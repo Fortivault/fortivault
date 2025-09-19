@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,6 +43,7 @@ export function RecoveryCalculator() {
     hasEvidence: false,
   })
   const [result, setResult] = useState<CalculationResult | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   const fraudTypes = [
     "Cryptocurrency Scam",
@@ -61,7 +63,7 @@ export function RecoveryCalculator() {
     "Gift Cards",
   ]
 
-  const calculateRecovery = () => {
+  const calculateRecovery = async () => {
     // This is a simplified calculation model
     let baseProbability = 50
     let impactFactors = []
@@ -156,13 +158,47 @@ export function RecoveryCalculator() {
     // Ensure probability is between 0 and 100
     baseProbability = Math.min(Math.max(baseProbability, 0), 100)
 
-    setResult({
+    const calculation = {
       probability: baseProbability,
       estimatedAmount,
       timeframe,
       riskLevel,
       factors: impactFactors,
+    }
+    setResult(calculation)
+
+    // Store result in backend
+    setIsSaving(true)
+    try {
+      const res = await fetch("/api/agent/recovery-result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          probability: baseProbability,
+          estimatedAmount,
+          timeframe,
+          riskLevel,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to save result")
+      toast.success("Calculation saved!")
+    } catch (e) {
+      toast.error("Could not save result")
+    } finally {
+      setIsSaving(false)
+    }
+  const resetCalculator = () => {
+    setFormData({
+      fraudType: "",
+      amount: "",
+      timeSinceIncident: "",
+      paymentMethod: "",
+      hasCommunication: false,
+      hasEvidence: false,
     })
+    setResult(null)
+  }
   }
 
   const getProbabilityColor = (probability: number) => {
@@ -299,19 +335,29 @@ export function RecoveryCalculator() {
             </div>
           </div>
 
-          <Button
-            className="w-full"
-            onClick={calculateRecovery}
-            disabled={
-              !formData.fraudType ||
-              !formData.amount ||
-              !formData.timeSinceIncident ||
-              !formData.paymentMethod
-            }
-          >
-            <Calculator className="w-4 h-4 mr-2" />
-            Calculate Recovery Probability
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="w-full"
+              onClick={calculateRecovery}
+              disabled={
+                !formData.fraudType ||
+                !formData.amount ||
+                !formData.timeSinceIncident ||
+                !formData.paymentMethod || isSaving
+              }
+            >
+              <Calculator className="w-4 h-4 mr-2" />
+              {isSaving ? "Saving..." : "Calculate & Save"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetCalculator}
+              disabled={isSaving}
+            >
+              Reset
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
