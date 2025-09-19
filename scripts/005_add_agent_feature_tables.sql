@@ -1,3 +1,26 @@
+-- Agent analytics table
+CREATE TABLE IF NOT EXISTS agent_analytics (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  agent_id uuid NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  cases_resolved integer DEFAULT 0,
+  success_rate numeric DEFAULT 0,
+  avg_response_time integer DEFAULT 0,
+  total_recoveries numeric DEFAULT 0,
+  performance_score numeric DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Agent case stats table
+CREATE TABLE IF NOT EXISTS agent_case_stats (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  agent_id uuid NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  recovery_probability integer DEFAULT 0,
+  last_contact timestamptz,
+  performance_metrics jsonb DEFAULT '{}',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
 -- Training modules table
 CREATE TABLE IF NOT EXISTS training_modules (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),

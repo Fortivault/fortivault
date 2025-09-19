@@ -1,3 +1,167 @@
+      agent_analytics: {
+        Row: {
+          id: string;
+          agent_id: string;
+          cases_resolved: number;
+          success_rate: number;
+          avg_response_time: number;
+          total_recoveries: number;
+          performance_score: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agent_id: string;
+          cases_resolved?: number;
+          success_rate?: number;
+          avg_response_time?: number;
+          total_recoveries?: number;
+          performance_score?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          agent_id?: string;
+          cases_resolved?: number;
+          success_rate?: number;
+          avg_response_time?: number;
+          total_recoveries?: number;
+          performance_score?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_analytics_agent_id_fkey",
+            columns: ["agent_id"],
+            isOneToOne: false,
+            referencedRelation: "agents",
+            referencedColumns: ["id"],
+          }
+        ];
+      };
+      agent_case_stats: {
+        Row: {
+          id: string;
+          agent_id: string;
+          recovery_probability: number;
+          last_contact: string | null;
+          performance_metrics: any;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agent_id: string;
+          recovery_probability?: number;
+          last_contact?: string | null;
+          performance_metrics?: any;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          agent_id?: string;
+          recovery_probability?: number;
+          last_contact?: string | null;
+          performance_metrics?: any;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_case_stats_agent_id_fkey",
+            columns: ["agent_id"],
+            isOneToOne: false,
+            referencedRelation: "agents",
+            referencedColumns: ["id"],
+          }
+        ];
+      };
+      agent_analytics: {
+        Row: {
+          id: string
+          agent_id: string
+          cases_resolved: number
+          success_rate: number
+          avg_response_time: number
+          total_recoveries: number
+          performance_score: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          agent_id: string
+          cases_resolved?: number
+          success_rate?: number
+          avg_response_time?: number
+          total_recoveries?: number
+          performance_score?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          agent_id?: string
+          cases_resolved?: number
+          success_rate?: number
+          avg_response_time?: number
+          total_recoveries?: number
+          performance_score?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_analytics_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      agent_case_stats: {
+        Row: {
+          id: string
+          agent_id: string
+          recovery_probability: number
+          last_contact: string | null
+          performance_metrics: any
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          agent_id: string
+          recovery_probability?: number
+          last_contact?: string | null
+          performance_metrics?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          agent_id?: string
+          recovery_probability?: number
+          last_contact?: string | null
+          performance_metrics?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_case_stats_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
 export type Json =
   | string
   | number
