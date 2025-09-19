@@ -75,6 +75,7 @@
     "zod": "3.25.67"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@types/node": "^22",
     "@types/nodemailer": "^7.0.1",
     "@types/react": "^19",
