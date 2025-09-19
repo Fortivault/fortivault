@@ -11,6 +11,12 @@ import { Progress } from "@/components/ui/progress"
 
 import { AgentVictimCommunicationHub } from "@/components/chat/agent-victim-communication-hub"
 import { AgentAnalyticsDashboard } from "@/components/analytics/agent-analytics-dashboard"
+import { NotificationBell } from "@/components/agent/NotificationBell"
+import { RecoveryCalculator } from "@/components/agent/RecoveryCalculator"
+import { LegalResourcesManager } from "@/components/agent/LegalResourcesManager"
+import { AgentEscalationChat } from "@/components/agent/AgentEscalationChat"
+import { TrainingCenter } from "@/components/agent/TrainingCenter"
+import { CaseTemplatesManager } from "@/components/agent/CaseTemplatesManager"
 import {
   Shield,
   MessageCircle,
@@ -179,9 +185,7 @@ function AgentDashboardContent() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm">
-                  <Bell className="w-4 h-4" />
-                </Button>
+                <NotificationBell />
                 <div className="flex items-center gap-2">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src="/placeholder.svg?key=agent-avatar" />
@@ -525,93 +529,21 @@ function AgentDashboardContent() {
 
                   <TabsContent value="tools" className="mt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <Card className="cursor-pointer hover:shadow-md transition-all">
-                        <CardContent className="p-6 text-center">
-                          <div className="p-3 bg-blue-500/10 rounded-full w-fit mx-auto mb-3">
-                            <BarChart3 className="w-6 h-6 text-blue-600" />
-                          </div>
-                          <h3 className="font-semibold mb-2">Recovery Calculator</h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Calculate recovery probability and estimated amounts
-                          </p>
-                          <Button variant="outline" className="w-full bg-transparent">
-                            Launch Tool
-                          </Button>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="cursor-pointer hover:shadow-md transition-all">
-                        <CardContent className="p-6 text-center">
-                          <div className="p-3 bg-green-500/10 rounded-full w-fit mx-auto mb-3">
-                            <Shield className="w-6 h-6 text-green-600" />
-                          </div>
-                          <h3 className="font-semibold mb-2">Fraud Database</h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Search known scammer databases and patterns
-                          </p>
-                          <Button variant="outline" className="w-full bg-transparent">
-                            Search Database
-                          </Button>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="cursor-pointer hover:shadow-md transition-all">
-                        <CardContent className="p-6 text-center">
-                          <div className="p-3 bg-orange-500/10 rounded-full w-fit mx-auto mb-3">
-                            <Settings className="w-6 h-6 text-orange-600" />
-                          </div>
-                          <h3 className="font-semibold mb-2">Case Templates</h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Access pre-built templates for common case types
-                          </p>
-                          <Button variant="outline" className="w-full bg-transparent">
-                            View Templates
-                          </Button>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="cursor-pointer hover:shadow-md transition-all">
-                        <CardContent className="p-6 text-center">
-                          <div className="p-3 bg-purple-500/10 rounded-full w-fit mx-auto mb-3">
-                            <FileText className="w-6 h-6 text-purple-600" />
-                          </div>
-                          <h3 className="font-semibold mb-2">Legal Resources</h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Access legal documents and compliance guides
-                          </p>
-                          <Button variant="outline" className="w-full bg-transparent">
-                            View Resources
-                          </Button>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="cursor-pointer hover:shadow-md transition-all">
-                        <CardContent className="p-6 text-center">
-                          <div className="p-3 bg-red-500/10 rounded-full w-fit mx-auto mb-3">
-                            <AlertTriangle className="w-6 h-6 text-red-600" />
-                          </div>
-                          <h3 className="font-semibold mb-2">Escalation Center</h3>
-                          <p className="text-sm text-muted-foreground mb-4">Escalate complex cases to supervisors</p>
-                          <Button variant="outline" className="w-full bg-transparent">
-                            Escalate Case
-                          </Button>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="cursor-pointer hover:shadow-md transition-all">
-                        <CardContent className="p-6 text-center">
-                          <div className="p-3 bg-teal-500/10 rounded-full w-fit mx-auto mb-3">
-                            <HelpCircle className="w-6 h-6 text-teal-600" />
-                          </div>
-                          <h3 className="font-semibold mb-2">Training Center</h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Access training materials and best practices
-                          </p>
-                          <Button variant="outline" className="w-full bg-transparent">
-                            Start Training
-                          </Button>
-                        </CardContent>
-                      </Card>
+                      <div className="col-span-1">
+                        <RecoveryCalculator />
+                      </div>
+                      <div className="col-span-1">
+                        <LegalResourcesManager />
+                      </div>
+                      <div className="col-span-1">
+                        <AgentEscalationChat />
+                      </div>
+                      <div className="col-span-1">
+                        <TrainingCenter />
+                      </div>
+                      <div className="col-span-1">
+                        <CaseTemplatesManager />
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
