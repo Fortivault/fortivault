@@ -58,6 +58,7 @@
     "framer-motion": "latest",
     "geist": "latest",
     "input-otp": "latest",
+    "jose": "^6.1.0",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "latest",
