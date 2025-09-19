@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { useAgentAuth } from "@/hooks/use-agent-auth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -62,6 +63,7 @@ export default function AgentDashboard() {
 function AgentDashboardContent() {
   const [agentData, setAgentData] = useState<any>(null)
   const { agent, logout } = useAgentAuth()
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const {
     cases,
     statistics,
@@ -114,6 +116,11 @@ function AgentDashboardContent() {
   }, [agent])
 
   const handleLogout = () => {
+    setShowLogoutModal(true)
+  }
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false)
     logout()
   }
 
@@ -204,6 +211,23 @@ function AgentDashboardContent() {
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   <LogOut className="w-4 h-4" />
                 </Button>
+      {/* Logout Confirmation Modal */}
+      <Dialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Logout</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">Are you sure you want to log out of your agent dashboard?</div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLogoutModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmLogout}>
+              Log Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
               </div>
             </div>
           </div>
