@@ -1,8 +1,8 @@
 import { SignJWT, jwtVerify } from "jose"
-import { createSecretKey } from "crypto"
 
+// Use Web Crypto friendly secret for Edge runtime compatibility
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
-const secretKey = createSecretKey(Buffer.from(JWT_SECRET))
+const secretKey = new TextEncoder().encode(JWT_SECRET)
 
 export async function signJWT(payload: any, expiresIn: string = "15m") {
   const jwt = await new SignJWT(payload)
@@ -10,7 +10,7 @@ export async function signJWT(payload: any, expiresIn: string = "15m") {
     .setIssuedAt()
     .setExpirationTime(expiresIn)
     .sign(secretKey)
-  
+
   return jwt
 }
 
@@ -27,8 +27,7 @@ export async function verifyJWT(token: string) {
 export async function refreshJWT(token: string) {
   const payload = await verifyJWT(token)
   if (!payload) return null
-  
-  // Create new token with fresh expiration
+
   return signJWT({
     ...payload,
     iat: Math.floor(Date.now() / 1000),
