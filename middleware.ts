@@ -104,21 +104,23 @@ export async function middleware(request: NextRequest) {
 
     // Rate limiting for API routes
     if (isApiRoute) {
-      const ip = request.headers.get("x-real-ip") ?? 
-        request.headers.get("x-forwarded-for")?.split(",")[0] ?? 
+      const ip = request.headers.get("x-real-ip") ??
+        request.headers.get("x-forwarded-for")?.split(",")[0] ??
         "127.0.0.1"
-      const { success, limit, reset, remaining } = await apiRatelimit.limit(ip)
-      
-      if (!success) {
-        return new NextResponse("Too many requests", {
-          status: 429,
-          headers: {
-            "Retry-After": reset.toString(),
-            "X-RateLimit-Limit": limit.toString(),
-            "X-RateLimit-Remaining": remaining.toString(),
-            "X-RateLimit-Reset": reset.toString(),
-          },
-        })
+
+      if (apiRatelimit) {
+        const { success, limit, reset, remaining } = await apiRatelimit.limit(ip)
+        if (!success) {
+          return new NextResponse("Too many requests", {
+            status: 429,
+            headers: {
+              "Retry-After": reset.toString(),
+              "X-RateLimit-Limit": limit.toString(),
+              "X-RateLimit-Remaining": remaining.toString(),
+              "X-RateLimit-Reset": reset.toString(),
+            },
+          })
+        }
       }
     }
 
