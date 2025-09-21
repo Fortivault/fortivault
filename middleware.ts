@@ -82,21 +82,23 @@ export async function middleware(request: NextRequest) {
     
     // Rate limiting for login attempts
     if (isAgentLogin || isAdminLogin) {
-      const ip = request.headers.get("x-real-ip") ?? 
-        request.headers.get("x-forwarded-for")?.split(",")[0] ?? 
+      const ip = request.headers.get("x-real-ip") ??
+        request.headers.get("x-forwarded-for")?.split(",")[0] ??
         "127.0.0.1"
-      const { success, limit, reset, remaining } = await loginRatelimit.limit(ip)
-      
-      if (!success) {
-        return new NextResponse("Too many login attempts", {
-          status: 429,
-          headers: {
-            "Retry-After": reset.toString(),
-            "X-RateLimit-Limit": limit.toString(),
-            "X-RateLimit-Remaining": remaining.toString(),
-            "X-RateLimit-Reset": reset.toString(),
-          },
-        })
+
+      if (loginRatelimit) {
+        const { success, limit, reset, remaining } = await loginRatelimit.limit(ip)
+        if (!success) {
+          return new NextResponse("Too many login attempts", {
+            status: 429,
+            headers: {
+              "Retry-After": reset.toString(),
+              "X-RateLimit-Limit": limit.toString(),
+              "X-RateLimit-Remaining": remaining.toString(),
+              "X-RateLimit-Reset": reset.toString(),
+            },
+          })
+        }
       }
     }
 
