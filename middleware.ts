@@ -6,23 +6,28 @@ import { Redis } from "@upstash/redis"
 import { headers } from "next/headers"
 import { verifyJWT } from "@/lib/auth/jwt"
 
-// Initialize Redis client for rate limiting
-const redis = Redis.fromEnv()
+// Initialize Redis client for rate limiting (optional)
+const hasUpstash = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+const redis = hasUpstash ? Redis.fromEnv() : null
 
-// Configure rate limiters
-const loginRatelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(5, "5 m"), // 5 attempts per 5 minutes
-  analytics: true,
-  prefix: "@upstash/ratelimit/login",
-})
+// Configure rate limiters only if Upstash is configured
+const loginRatelimit = hasUpstash
+  ? new Ratelimit({
+      redis: redis!,
+      limiter: Ratelimit.slidingWindow(5, "5 m"), // 5 attempts per 5 minutes
+      analytics: true,
+      prefix: "@upstash/ratelimit/login",
+    })
+  : null
 
-const apiRatelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(100, "1 m"), // 100 requests per minute
-  analytics: true,
-  prefix: "@upstash/ratelimit/api",
-})
+const apiRatelimit = hasUpstash
+  ? new Ratelimit({
+      redis: redis!,
+      limiter: Ratelimit.slidingWindow(100, "1 m"), // 100 requests per minute
+      analytics: true,
+      prefix: "@upstash/ratelimit/api",
+    })
+  : null
 
 // CSRF token verification
 const verifyCSRFToken = async (request: NextRequest) => {
