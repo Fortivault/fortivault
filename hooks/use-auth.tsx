@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
@@ -23,14 +23,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
+
+  const hasSupabase = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
 
   useEffect(() => {
-    // Get initial session
+    if (!hasSupabase) {
+      // Supabase not configured; skip auth wiring
+      setIsLoading(false)
+      return
+    }
+
+    supabaseRef.current = createClient()
+
+    const supabase = supabaseRef.current
+
     const getInitialSession = async () => {
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await supabase!.auth.getSession()
 
       if (session?.user) {
         setUser(session.user)
@@ -42,10 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getInitialSession()
 
-    // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase!.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user)
         await fetchProfile(session.user.id)
@@ -57,11 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [hasSupabase])
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
+      if (!supabaseRef.current) return
+      const { data, error } = await supabaseRef.current
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single()
 
       if (error) throw error
       setProfile(data)
@@ -70,18 +87,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const ensureSupabase = () => {
+    if (!supabaseRef.current) {
+      throw new Error("Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.")
+    }
+    return supabaseRef.current
+  }
+
   const login = async (email: string, password: string) => {
+    const supabase = ensureSupabase()
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-
     if (error) throw error
-
-    // Redirect will be handled by auth state change
   }
 
   const signup = async (userData: any) => {
+    const supabase = ensureSupabase()
     const { error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
@@ -91,17 +114,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           last_name: userData.lastName,
           role: userData.role || "user",
         },
-        emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
+        emailRedirectTo:
+          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
       },
     })
 
     if (error) throw error
 
-    // User will need to confirm email before they can sign in
     router.push("/auth/check-email")
   }
 
   const logout = async () => {
+    const supabase = ensureSupabase()
     const { error } = await supabase.auth.signOut()
     if (error) throw error
 
@@ -110,12 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/")
   }
 
-  // Redirect based on profile role when user/profile changes
   useEffect(() => {
     if (user && profile && !isLoading) {
       const currentPath = window.location.pathname
-
-      // Don't redirect if already on correct page
       if (profile.role === "reviewer" && !currentPath.startsWith("/reviewer")) {
         router.push("/reviewer")
       } else if (profile.role === "user" && !currentPath.startsWith("/dashboard")) {
@@ -125,7 +146,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, profile, isLoading, router])
 
   return (
-    <AuthContext.Provider value={{ user, profile, login, signup, logout, isLoading }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, profile, login, signup, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
   )
 }
 
