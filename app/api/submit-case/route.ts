@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       console.error("[v0] Error creating chat room:", chatRoomError)
     }
 
-    const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT || "https://formspree.io/f/mrbajgoq"
+    const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT
 
     try {
       const forwardData = new FormData()
