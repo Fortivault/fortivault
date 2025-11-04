@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
+import Link from "next/link"
 
 export default function ContactPage() {
   return (
@@ -140,7 +141,7 @@ export default function ContactPage() {
                       If you're currently experiencing fraud, report it immediately for urgent assistance.
                     </p>
                     <Button variant="secondary" className="w-full" asChild>
-                      <a href="/report">Report Fraud Now</a>
+                      <Link href="/report">Report Fraud Now</Link>
                     </Button>
                   </CardContent>
                 </Card>
